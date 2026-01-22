@@ -30,7 +30,7 @@ const MainMenu = () => {
   const menuItemsMemo = useMemo(
     () =>
       getMenuItems({
-        data: attrMobile && useSidebar ? allRoutes : allRoutes.mainMenuItems,
+        data: attrMobile && useSidebar ? allRoutes : allRoutes.mainRoutesItems,
         isLogin,
         userRole: currentUser.role,
       }),

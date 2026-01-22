@@ -2,6 +2,7 @@
 import { lazy } from 'react';
 import { USER_ROLE } from 'constants.js';
 import { DEFAULT_PATHS } from 'config.js';
+import Operations from 'views/pages/operation/Operations';
 
 const qsr = {
   dashboard: lazy(() => import('views/pages/Dashboard')),
@@ -9,16 +10,19 @@ const qsr = {
   kot: lazy(() => import('views/pages/kot/ViewKots')),
 };
 
-const order = {
-  dinein: lazy(() => import('views/pages/order/DineInOrder')),
-  takeaway: lazy(() => import('views/pages/order/TakeawayOrder')),
-  delivery: lazy(() => import('views/pages/order/DeliveryOrder')),
-}
+const operation = {
+  bookings: lazy(() => import('views/pages/operation/booking/Bookings')),
+  newBooking: lazy(() => import('views/pages/operation/booking/Newbooking')),
+  checkInOut: lazy(() => import('views/pages/operation/booking/Checkinout')),
+
+  RoomCategories: lazy(() => import('views/pages/operation/Room/Roomcategories')),
+  Rooms: lazy(() => import('views/pages/operation/Room/Rooms')),
+};
 
 const appRoot = DEFAULT_PATHS.APP.endsWith('/') ? DEFAULT_PATHS.APP.slice(1, DEFAULT_PATHS.APP.length) : DEFAULT_PATHS.APP;
 
 const allRoutes = {
-  mainMenuItems: [
+  mainRoutesItems: [
     {
       path: DEFAULT_PATHS.APP,
       exact: true,
@@ -36,20 +40,12 @@ const allRoutes = {
       label: 'Operations',
       icon: 'list',
       component: qsr.operation,
-    }, 
+    },
     {
       path: `${appRoot}/kot`,
       label: 'KOT',
       icon: 'cook-hat',
       component: qsr.kot,
-    },
-    {
-      path: `${appRoot}/order`,
-      subs: [
-        { path: '/dine-in', label: 'Dine In', component: order.dinein },
-        { path: '/takeaway', label: 'Take Away', component: order.takeaway },
-        { path: '/delivery', label: 'Delivery', component: order.delivery },
-      ]
     },
   ],
   sidebarItems: [

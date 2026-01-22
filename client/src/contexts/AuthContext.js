@@ -1,9 +1,11 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import { authAPI } from 'services/api';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  const history = useHistory();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -14,6 +16,8 @@ export const AuthProvider = ({ children }) => {
 
     if (token && savedUser) {
       setUser(JSON.parse(savedUser));
+    } else {
+      history.push('/login');
     }
     setLoading(false);
   }, []);

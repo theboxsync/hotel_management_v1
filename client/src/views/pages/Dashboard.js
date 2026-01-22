@@ -8,11 +8,11 @@ import BreadcrumbList from 'components/breadcrumb-list/BreadcrumbList';
 
 // Import all dashboard pages
 import DashboardHome from './Dashboardhome';
-import RoomCategories from './Roomcategories';
-import Rooms from './Rooms';
-import Bookings from './Bookings';
-import NewBooking from './Newbooking';
-import CheckInOut from './Checkinout';
+import RoomCategories from './operation/Room/Roomcategories';
+import Rooms from './operation/Room/Rooms';
+import Bookings from './operation/booking/Bookings';
+import NewBooking from './operation/booking/Newbooking';
+import CheckInOut from './operation/booking/Checkinout';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -63,28 +63,8 @@ const Dashboard = () => {
         <Col xxl="2" xl="3" className="d-none d-xl-block">
           <div className="position-fixed h-100 start-0" style={{ width: '280px', zIndex: 1000, background: 'var(--bs-light)' }}>
             <div className="d-flex flex-column h-100">
-              {/* Sidebar Header */}
-              <div className="px-4 py-3 border-bottom">
-                <div className="d-flex align-items-center">
-                  <div className="bg-gradient-primary sh-5 sw-5 rounded-xl d-flex justify-content-center align-items-center me-3">
-                    <CsLineIcons icon="building" className="text-white" />
-                  </div>
-                  <div>
-                    <h5 className="mb-0">{user?.hotel_name || 'Hotel'}</h5>
-                    <small className="text-muted">Management System</small>
-                  </div>
-                </div>
-              </div>
-
               {/* Sidebar Navigation */}
               <div className="flex-grow-1 px-3 py-4">
-                <div className="mb-4">
-                  <h6 className="text-small text-muted text-uppercase mb-2">MAIN</h6>
-                  <NavLink to="/dashboard" exact className="nav-link mb-2" activeClassName="active" onClick={() => setMobileMenuOpen(false)}>
-                    <CsLineIcons icon="home" className="me-2" size="17" />
-                    Dashboard
-                  </NavLink>
-                </div>
 
                 <div className="mb-4">
                   <h6 className="text-small text-muted text-uppercase mb-2">ROOMS</h6>
@@ -136,50 +116,6 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <Col xxl="10" xl="9" className="offset-xxl-2 offset-xl-3">
-          {/* Top Header - Mobile */}
-          <div className="page-title-container">
-            <Row className="align-items-center">
-              <Col xs="12" md="7">
-                <h1 className="mb-0 pb-0 display-4">{title}</h1>
-                <BreadcrumbList items={getBreadcrumbs()} />
-              </Col>
-              <Col xs="12" md="5" className="d-flex justify-content-end align-items-center">
-                {/* Mobile Menu Button */}
-                <Button variant="outline-primary" size="sm" className="d-xl-none me-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                  <CsLineIcons icon="menu" />
-                </Button>
-
-                {/* User Dropdown */}
-                <Dropdown className="d-inline-block">
-                  <Dropdown.Toggle variant="outline-primary" size="sm" className="d-flex align-items-center">
-                    <div className="bg-gradient-primary sh-3 sw-3 rounded-circle d-flex justify-content-center align-items-center me-2">
-                      <span className="text-white" style={{ fontSize: '10px' }}>
-                        {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                      </span>
-                    </div>
-                    <span className="d-none d-md-inline">{user?.name}</span>
-                  </Dropdown.Toggle>
-
-                  <Dropdown.Menu>
-                    <Dropdown.Item>
-                      <CsLineIcons icon="user" className="me-2" />
-                      Profile
-                    </Dropdown.Item>
-                    <Dropdown.Item>
-                      <CsLineIcons icon="settings" className="me-2" />
-                      Settings
-                    </Dropdown.Item>
-                    <Dropdown.Divider />
-                    <Dropdown.Item onClick={handleLogout}>
-                      <CsLineIcons icon="logout" className="me-2" />
-                      Logout
-                    </Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown>
-              </Col>
-            </Row>
-          </div>
-
           {/* Mobile Sidebar Overlay */}
           {mobileMenuOpen && (
             <div className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50" style={{ zIndex: 9998 }} onClick={() => setMobileMenuOpen(false)} />
