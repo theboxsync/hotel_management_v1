@@ -4,7 +4,6 @@ import { useSelector } from 'react-redux';
 import { LAYOUT } from 'constants.js';
 import CsLineIcons from 'cs-line-icons/CsLineIcons';
 import useCustomLayout from 'hooks/useCustomLayout';
-import 'react-datepicker/dist/react-datepicker.css';
 import { useWindowSize } from 'hooks/useWindowSize';
 import { NavLink } from 'react-router-dom';
 
@@ -103,42 +102,42 @@ const MobileNavbar = () => {
   );
 };
 
-// This is now just a layout wrapper - NO routing logic
-const Operations = () => {
-  useCustomLayout({ layout: LAYOUT.Boxed });
-  const { width } = useWindowSize();
+const withOperationsLayout = (WrappedComponent) => {
+  return (props) => {
+    useCustomLayout({ layout: LAYOUT.Boxed });
+    const { width } = useWindowSize();
+    const { themeValues } = useSelector((state) => state.settings);
+    const lgBreakpoint = parseInt(themeValues.lg.replace('px', ''), 10);
 
-  const { themeValues } = useSelector((state) => state.settings);
-  const lgBreakpoint = parseInt(themeValues.lg.replace('px', ''), 10);
-
-  return (
-    <div className="position-relative">
-      {/* Mobile Navbar */}
-      {width && width < lgBreakpoint && (
-        <div className="position-absolute top-0 start-0 end-0 d-lg-none">
-          <MobileNavbar />
-        </div>
-      )}
-
-      <Row className="pt-7">
-        {/* Desktop Sidebar */}
-        {width && width >= lgBreakpoint && (
-          <Col xs="auto" className="d-none d-lg-flex">
-            <div className="nav flex-column sw-25 mt-2">
-              <NavContent />
-            </div>
-          </Col>
+    return (
+      <div className="position-relative">
+        {/* Mobile Navbar */}
+        {width && width < lgBreakpoint && (
+          <div className="position-absolute top-0 start-0 end-0 d-lg-none">
+            <MobileNavbar />
+          </div>
         )}
 
-        {/* Main Content - Just shows navigation, actual pages handled by routes.js */}
-        <Col>
-          <div className="text-center mt-5">
-            <p>Select an option from the navigation menu</p>
-          </div>
-        </Col>
-      </Row>
-    </div>
-  );
+        <Row>
+          {/* Desktop Sidebar */}
+          {width && width >= lgBreakpoint ? (
+            <Col xs="auto" className="d-none d-lg-flex">
+              <div className="nav flex-column sw-25 mt-2">
+                <NavContent />
+              </div>
+            </Col>
+          ) : (
+            <div className="pt-7" />
+          )}
+
+          {/* Main Content */}
+          <Col>
+            <WrappedComponent {...props} />
+          </Col>
+        </Row>
+      </div>
+    );
+  };
 };
 
-export default Operations;
+export default withOperationsLayout;

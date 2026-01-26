@@ -1,23 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Button, Form, Badge, Modal, Spinner, Alert } from 'react-bootstrap';
+import { Card, Row, Col, Button, Form, Badge, Modal, Spinner, Alert, Image } from 'react-bootstrap';
 import { roomCategoryAPI } from 'services/api';
 import { toast } from 'react-toastify';
 import HtmlHead from 'components/html-head/HtmlHead';
 import BreadcrumbList from 'components/breadcrumb-list/BreadcrumbList';
 import CsLineIcons from 'cs-line-icons/CsLineIcons';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API  || 'http://localhost:5000/api';
 
 const RoomCategories = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
   const [formData, setFormData] = useState({
     category_name: '',
     base_price: '',
     max_occupancy: '',
     amenities: '',
     description: '',
+    images: [], // Existing saved images
   });
+
+  const [selectedFiles, setSelectedFiles] = useState([]); // New files to upload
+  const [previewUrls, setPreviewUrls] = useState([]); // Preview URLs for new files
 
   const title = 'Room Categories';
   const description = 'Manage room categories and pricing';
@@ -51,6 +60,54 @@ const RoomCategories = () => {
     });
   };
 
+  // Handle file selection
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+
+    if (files.length > 5) {
+      toast.error('Maximum 5 images allowed');
+      return;
+    }
+
+    // Validate file sizes
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const invalidFiles = files.filter((file) => file.size > maxSize);
+
+    if (invalidFiles.length > 0) {
+      toast.error('Some files exceed 5MB limit');
+      return;
+    }
+
+    setSelectedFiles(files);
+
+    // Create preview URLs
+    const urls = files.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+  };
+
+  // Remove image (existing or new)
+  const removeImage = (index, isExisting = false) => {
+    if (isExisting) {
+      // Remove from existing images
+      const newImages = [...formData.images];
+      newImages.splice(index, 1);
+      setFormData({ ...formData, images: newImages });
+    } else {
+      // Remove from new uploads
+      const newFiles = [...selectedFiles];
+      const newPreviews = [...previewUrls];
+
+      // Revoke URL to free memory
+      URL.revokeObjectURL(newPreviews[index]);
+
+      newFiles.splice(index, 1);
+      newPreviews.splice(index, 1);
+
+      setSelectedFiles(newFiles);
+      setPreviewUrls(newPreviews);
+    }
+  };
+
   const closeModal = () => {
     setShowModal(false);
     setEditingCategory(null);
@@ -60,28 +117,65 @@ const RoomCategories = () => {
       max_occupancy: '',
       amenities: '',
       description: '',
+      images: [],
     });
+    setSelectedFiles([]);
+
+    // Clean up preview URLs
+    previewUrls.forEach((url) => URL.revokeObjectURL(url));
+    setPreviewUrls([]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const data = {
-      ...formData,
-      base_price: parseFloat(formData.base_price),
-      max_occupancy: parseInt(formData.max_occupancy, 10),
-      amenities: formData.amenities
-        .split(',')
-        .map((a) => a.trim())
-        .filter((a) => a),
-    };
+    setUploading(true);
 
     try {
+      // Create FormData for multipart/form-data
+      const formDataToSend = new FormData();
+
+      // Add text fields
+      formDataToSend.append('category_name', formData.category_name);
+      formDataToSend.append('base_price', formData.base_price);
+      formDataToSend.append('max_occupancy', formData.max_occupancy);
+      formDataToSend.append('description', formData.description || '');
+
+      // Add amenities as array
+      const amenitiesArray = formData.amenities
+        .split(',')
+        .map((a) => a.trim())
+        .filter((a) => a);
+      amenitiesArray.forEach((amenity) => {
+        formDataToSend.append('amenities[]', amenity);
+      });
+
+      // Add existing images (for update)
+      if (formData.images.length > 0) {
+        formDataToSend.append('existing_images', JSON.stringify(formData.images));
+      }
+
+      // Add new image files
+      selectedFiles.forEach((file) => {
+        formDataToSend.append('images', file);
+      });
+
+      const token = localStorage.getItem('token');
+
       if (editingCategory) {
-        await roomCategoryAPI.update(editingCategory._id, data);
+        await axios.put(`${API_URL}/rooms/category/${editingCategory._id}`, formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
+          },
+        });
         toast.success('Category updated successfully');
       } else {
-        await roomCategoryAPI.create(data);
+        await axios.post(`${API_URL}/rooms/category`, formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
+          },
+        });
         toast.success('Category created successfully');
       }
 
@@ -90,6 +184,8 @@ const RoomCategories = () => {
     } catch (error) {
       console.error('Error saving category:', error);
       toast.error(error.response?.data?.message || 'Operation failed');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -101,6 +197,7 @@ const RoomCategories = () => {
       max_occupancy: category.max_occupancy,
       amenities: Array.isArray(category.amenities) ? category.amenities.join(', ') : '',
       description: category.description || '',
+      images: category.images || [],
     });
     setShowModal(true);
   };
@@ -118,6 +215,14 @@ const RoomCategories = () => {
       console.error('Error deleting category:', error);
       toast.error(error.response?.data?.message || 'Failed to delete category');
     }
+  };
+
+  // Helper to get full image URL
+  const getImageUrl = (imagePath) => {
+    console.log("Image Path : ", imagePath)
+    if (!imagePath) return null;
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${API_URL.replace('/api', '')}${imagePath}`;
   };
 
   if (loading) {
@@ -161,10 +266,25 @@ const RoomCategories = () => {
               {categories.map((category) => (
                 <Col key={category._id} md={6} lg={4}>
                   <Card className="h-100 hover-border-primary">
+                    {/* Category Image */}
+                    {category.images && category.images.length > 0 && (
+                      <div style={{ height: '200px', overflow: 'hidden' }}>
+                        <Card.Img
+                          variant="top"
+                          src={getImageUrl(category.images[0])}
+                          style={{ height: '100%', objectFit: 'cover' }}
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/400x200?text=No+Image';
+                          }}
+                        />
+                      </div>
+                    )}
+
                     <Card.Header className="d-flex justify-content-between align-items-center">
                       <h6 className="mb-0">{category.category_name}</h6>
                       <Badge bg="primary" className="d-flex align-items-center">
-                        <CsLineIcons icon="dollar-sign" className="me-1" size="12" />{process.env.REACT_APP_CURRENCY} {category.base_price}/night
+                        <CsLineIcons icon="dollar-sign" className="me-1" size="12" />
+                        {process.env.REACT_APP_CURRENCY} {category.base_price}/night
                       </Badge>
                     </Card.Header>
                     <Card.Body>
@@ -237,7 +357,7 @@ const RoomCategories = () => {
       </Row>
 
       {/* Add/Edit Modal */}
-      <Modal show={showModal} onHide={closeModal} centered>
+      <Modal show={showModal} onHide={closeModal} centered size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
             <CsLineIcons icon={editingCategory ? 'edit' : 'plus'} className="me-2" />
@@ -247,6 +367,61 @@ const RoomCategories = () => {
         <Form onSubmit={handleSubmit}>
           <Modal.Body>
             <Row className="g-3">
+              {/* Image Upload Section */}
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label>Category Images (Max 5)</Form.Label>
+                  <Form.Control type="file" multiple accept="image/*" onChange={handleFileChange} disabled={uploading} />
+                  <Form.Text className="text-muted">Upload up to 5 images. Max 5MB per image. Supported: JPG, PNG, GIF, WebP</Form.Text>
+                </Form.Group>
+
+                {/* Image Previews */}
+                {(formData.images.length > 0 || previewUrls.length > 0) && (
+                  <div className="mt-3">
+                    <small className="text-muted d-block mb-2">Images:</small>
+                    <Row className="g-2">
+                      {/* Existing images */}
+                      {formData.images.map((image, index) => (
+                        <Col xs={4} sm={3} key={`existing-${index}`}>
+                          <div className="position-relative">
+                            <Image src={getImageUrl(image)} thumbnail style={{ width: '100%', height: '100px', objectFit: 'cover' }} />
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              className="position-absolute top-0 end-0 m-1"
+                              style={{ padding: '2px 6px' }}
+                              onClick={() => removeImage(index, true)}
+                            >
+                              ×
+                            </Button>
+                          </div>
+                        </Col>
+                      ))}
+                      {/* New uploads preview */}
+                      {previewUrls.map((url, index) => (
+                        <Col xs={4} sm={3} key={`new-${index}`}>
+                          <div className="position-relative">
+                            <Image src={url} thumbnail style={{ width: '100%', height: '100px', objectFit: 'cover' }} />
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              className="position-absolute top-0 end-0 m-1"
+                              style={{ padding: '2px 6px' }}
+                              onClick={() => removeImage(index, false)}
+                            >
+                              ×
+                            </Button>
+                            <Badge bg="success" className="position-absolute bottom-0 start-0 m-1" style={{ fontSize: '10px' }}>
+                              New
+                            </Badge>
+                          </div>
+                        </Col>
+                      ))}
+                    </Row>
+                  </div>
+                )}
+              </Col>
+
               <Col md={12}>
                 <Form.Group>
                   <Form.Label>Category Name</Form.Label>
@@ -303,11 +478,20 @@ const RoomCategories = () => {
             </Row>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={closeModal}>
+            <Button variant="secondary" onClick={closeModal} disabled={uploading}>
               Cancel
             </Button>
-            <Button variant="primary" type="submit">
-              {editingCategory ? 'Update' : 'Create'}
+            <Button variant="primary" type="submit" disabled={uploading}>
+              {uploading ? (
+                <>
+                  <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                  Uploading...
+                </>
+              ) : editingCategory ? (
+                'Update'
+              ) : (
+                'Create'
+              )}
             </Button>
           </Modal.Footer>
         </Form>

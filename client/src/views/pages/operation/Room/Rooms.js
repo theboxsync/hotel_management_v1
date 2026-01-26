@@ -317,7 +317,7 @@ const Rooms = () => {
                 <h5 className="mb-0">All Rooms ({rooms.length})</h5>
               </Card.Header>
               <Card.Body className="p-0">
-                <div className="table-responsive">
+                <div className="table-responsive p-3">
                   <Table hover className="mb-0">
                     <thead>
                       <tr>
@@ -375,7 +375,7 @@ const Rooms = () => {
                                 onClick={() => handleDelete(room._id)}
                                 title="Delete"
                               >
-                                <CsLineIcons icon="trash" />
+                                <CsLineIcons icon="bin" />
                               </Button>
                             </div>
                           </td>

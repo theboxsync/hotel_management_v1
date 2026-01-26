@@ -2,6 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const http = require("http");
+const path = require("path");
+
 const connectDB = require("./utils/db");
 const AuthRouter = require("./routes/Authroutes");
 const RoomRouter = require("./routes/Roomroutes");
@@ -19,6 +21,10 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
   res.send("Hello, World!");
 });
+
+// Serve static files from uploads directory
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 // Health check route
 app.get("/health", (req, res) => {
   res.status(200).json({

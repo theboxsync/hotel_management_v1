@@ -52,7 +52,7 @@ const Main = () => {
           pauseOnHover
           draggable
         />
-        <Router basename={process.env.REACT_APP_BASENAME}>
+        <Router>
           <LangProvider>
             <AuthProvider>
               <RouteIdentifier routes={[...layoutlessRoutes, ...defaultRoutes]} fallback={<Loading />} />

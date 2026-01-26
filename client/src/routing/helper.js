@@ -167,6 +167,7 @@ export const convertToMenuItems = ({ data = [], authGuardActive = IS_AUTH_GUARD_
     if (tempItem.subs) {
       tempItem.subs = item.subs
         .map((sub) => {
+          if (sub.hideSub) return itemMapper({});
           const controlledSub = { ...sub, path: tempItem.path + sub.path };
           if (tempItem.mega || tempItem.megaParent) controlledSub.megaParent = true;
 

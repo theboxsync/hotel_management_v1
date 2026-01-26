@@ -1,22 +1,19 @@
 /* eslint-disable */
 import { lazy } from 'react';
-import { USER_ROLE } from 'constants.js';
 import { DEFAULT_PATHS } from 'config.js';
-import Operations from 'views/pages/operation/Operations';
+import withOperationsLayout from 'views/pages/operation/withOperationsLayout';
 
 const qsr = {
   dashboard: lazy(() => import('views/pages/Dashboard')),
   operation: lazy(() => import('views/pages/operation/Operations')),
-  kot: lazy(() => import('views/pages/kot/ViewKots')),
 };
 
 const operation = {
-  bookings: lazy(() => import('views/pages/operation/booking/Bookings')),
-  newBooking: lazy(() => import('views/pages/operation/booking/Newbooking')),
-  checkInOut: lazy(() => import('views/pages/operation/booking/Checkinout')),
-
-  RoomCategories: lazy(() => import('views/pages/operation/Room/Roomcategories')),
-  Rooms: lazy(() => import('views/pages/operation/Room/Rooms')),
+  bookings: withOperationsLayout(lazy(() => import('views/pages/operation/booking/Bookings'))),
+  newBooking: withOperationsLayout(lazy(() => import('views/pages/operation/booking/Newbooking'))),
+  checkInOut: withOperationsLayout(lazy(() => import('views/pages/operation/booking/Checkinout'))),
+  RoomCategories: withOperationsLayout(lazy(() => import('views/pages/operation/Room/Roomcategories'))),
+  Rooms: withOperationsLayout(lazy(() => import('views/pages/operation/Room/Rooms'))),
 };
 
 const appRoot = DEFAULT_PATHS.APP.endsWith('/') ? DEFAULT_PATHS.APP.slice(1, DEFAULT_PATHS.APP.length) : DEFAULT_PATHS.APP;
@@ -40,12 +37,38 @@ const allRoutes = {
       label: 'Operations',
       icon: 'list',
       component: qsr.operation,
-    },
-    {
-      path: `${appRoot}/kot`,
-      label: 'KOT',
-      icon: 'cook-hat',
-      component: qsr.kot,
+      subs: [
+        {
+          path: '/bookings',
+          label: 'All Bookings',
+          hideSub: true,
+          component: operation.bookings,
+        },
+        {
+          path: '/new-booking',
+          label: 'New Booking',
+          hideSub: true,
+          component: operation.newBooking,
+        },
+        {
+          path: '/check-in-out',
+          label: 'Check-In/Out',
+          hideSub: true,
+          component: operation.checkInOut,
+        },
+        {
+          path: '/room-categories',
+          label: 'Room Categories',
+          hideSub: true,
+          component: operation.RoomCategories,
+        },
+        {
+          path: '/rooms',
+          label: 'Manage Rooms',
+          hideSub: true,
+          component: operation.Rooms,
+        },
+      ],
     },
   ],
   sidebarItems: [

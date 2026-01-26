@@ -9,14 +9,8 @@ const User = require("../models/User");
  */
 const createRoomCategory = async (req, res) => {
   try {
-    const {
-      category_name,
-      base_price,
-      max_occupancy,
-      amenities,
-      description,
-      images,
-    } = req.body;
+    const { category_name, base_price, max_occupancy, amenities, description } =
+      req.body;
 
     // Validation
     if (!category_name || !base_price || !max_occupancy) {
@@ -55,6 +49,14 @@ const createRoomCategory = async (req, res) => {
       });
     }
 
+    // Handle uploaded images
+    let imageUrls = [];
+    if (req.files && req.files.length > 0) {
+      imageUrls = req.files.map(
+        (file) => `/uploads/room-category/${file.filename}`,
+      );
+    }
+
     // Create room category
     const roomCategory = new RoomCategory({
       hotel_id: req.user.hotel_id,
@@ -63,7 +65,7 @@ const createRoomCategory = async (req, res) => {
       max_occupancy,
       amenities: amenities || [],
       description: description || "",
-      images: images || [],
+      images: imageUrls,
     });
 
     const savedCategory = await roomCategory.save();
@@ -110,7 +112,7 @@ const getRoomCategories = async (req, res) => {
           total_rooms: roomCount,
           available_rooms: availableCount,
         };
-      })
+      }),
     );
 
     res.status(200).json({
@@ -180,7 +182,7 @@ const updateRoomCategory = async (req, res) => {
       max_occupancy,
       amenities,
       description,
-      images,
+      existing_images, // Images already saved (sent from frontend)
     } = req.body;
 
     // Find category
@@ -212,6 +214,29 @@ const updateRoomCategory = async (req, res) => {
       }
     }
 
+    // Handle uploaded images
+    let newImageUrls = [];
+    if (req.files && req.files.length > 0) {
+      newImageUrls = req.files.map(
+        (file) => `/uploads/room-category/${file.filename}`,
+      );
+    }
+
+    // Combine existing images with new uploads
+    let allImages = [];
+    if (existing_images) {
+      // If existing_images is sent as JSON string, parse it
+      try {
+        allImages =
+          typeof existing_images === "string"
+            ? JSON.parse(existing_images)
+            : existing_images;
+      } catch (e) {
+        allImages = [];
+      }
+    }
+    allImages = [...allImages, ...newImageUrls];
+
     // Update fields
     if (category_name) category.category_name = category_name;
     if (base_price) {
@@ -234,7 +259,7 @@ const updateRoomCategory = async (req, res) => {
     }
     if (amenities !== undefined) category.amenities = amenities;
     if (description !== undefined) category.description = description;
-    if (images !== undefined) category.images = images;
+    category.images = allImages; // Update with combined images
 
     const updatedCategory = await category.save();
 
@@ -242,7 +267,7 @@ const updateRoomCategory = async (req, res) => {
     if (base_price) {
       await Room.updateMany(
         { category_id: category._id.toString() },
-        { current_price: base_price, last_updated: new Date() }
+        { current_price: base_price, last_updated: new Date() },
       );
     }
 
@@ -403,7 +428,7 @@ const getRooms = async (req, res) => {
           ...room.toObject(),
           category_details: category,
         };
-      })
+      }),
     );
 
     res.status(200).json({
