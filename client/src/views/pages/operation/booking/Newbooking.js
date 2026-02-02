@@ -37,9 +37,9 @@ const NewBooking = () => {
   const description = 'Create a new room booking';
 
   const breadcrumbs = [
-    { to: '/dashboard', text: 'Dashboard' },
-    { to: '/dashboard/bookings', text: 'Bookings' },
-    { to: '/dashboard/bookings/new', text: 'New Booking' },
+    { to: '/operations', text: 'Operations' },
+    { to: '/operations/bookings', text: 'Bookings' },
+    { to: '/operations/new-booking', text: 'New Booking' },
   ];
 
   const fetchCategories = async () => {
@@ -143,7 +143,7 @@ const NewBooking = () => {
     try {
       await bookingAPI.create(bookingData);
       toast.success('Booking created successfully!');
-      history.push('/dashboard/bookings');
+      history.push('/operations/bookings');
     } catch (error) {
       console.error('Error creating booking:', error);
       toast.error(error.response?.data?.message || 'Failed to create booking');
@@ -155,7 +155,7 @@ const NewBooking = () => {
     if (step > 1) {
       setStep(step - 1);
     } else {
-      history.push('/dashboard/bookings');
+      history.push('/operations/bookings');
     }
   };
 
@@ -193,7 +193,7 @@ const NewBooking = () => {
           {/* Progress Steps */}
           <Card className="mb-4">
             <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
+              <div className="d-flex justify-content-around align-items-center mb-3">
                 {steps.map((stepItem) => (
                   <div key={stepItem.number} className="d-flex flex-column align-items-center">
                     <div

@@ -2,6 +2,8 @@
 import { lazy } from 'react';
 import { DEFAULT_PATHS } from 'config.js';
 import withOperationsLayout from 'views/pages/operation/withOperationsLayout';
+import AddEditRoomCategory from 'views/pages/operation/Room/AddEditRoomCategory';
+import AddEditRoom from 'views/pages/operation/Room/AddEditRoom';
 
 const qsr = {
   dashboard: lazy(() => import('views/pages/Dashboard')),
@@ -13,7 +15,9 @@ const operation = {
   newBooking: withOperationsLayout(lazy(() => import('views/pages/operation/booking/Newbooking'))),
   checkInOut: withOperationsLayout(lazy(() => import('views/pages/operation/booking/Checkinout'))),
   RoomCategories: withOperationsLayout(lazy(() => import('views/pages/operation/Room/Roomcategories'))),
+  AddEditRoomCategory: withOperationsLayout(lazy(() => import('views/pages/operation/Room/AddEditRoomCategory'))),
   Rooms: withOperationsLayout(lazy(() => import('views/pages/operation/Room/Rooms'))),
+  AddEditRoom: withOperationsLayout(lazy(() => import('views/pages/operation/Room/AddEditRoom'))),
 };
 
 const appRoot = DEFAULT_PATHS.APP.endsWith('/') ? DEFAULT_PATHS.APP.slice(1, DEFAULT_PATHS.APP.length) : DEFAULT_PATHS.APP;
@@ -57,10 +61,34 @@ const allRoutes = {
           component: operation.checkInOut,
         },
         {
+          path: '/room-categories/add',
+          label: 'Add Room Categories',
+          hideSub: true,
+          component: operation.AddEditRoomCategory,
+        },
+        {
+          path: '/room-categories/edit/:id',
+          label: 'Edit Room Categories',
+          hideSub: true,
+          component: operation.AddEditRoomCategory,
+        },
+        {
           path: '/room-categories',
           label: 'Room Categories',
           hideSub: true,
           component: operation.RoomCategories,
+        },
+        {
+          path: '/rooms/add',
+          label: 'Add Room',
+          hideSub: true,
+          component: operation.AddEditRoom,
+        },
+        {
+          path: '/rooms/edit/:id',
+          label: 'Edit Room',
+          hideSub: true,
+          component: operation.AddEditRoom,
         },
         {
           path: '/rooms',

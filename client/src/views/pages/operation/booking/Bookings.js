@@ -30,8 +30,8 @@ const Bookings = () => {
   const description = 'Manage hotel bookings';
 
   const breadcrumbs = [
-    { to: '/dashboard', text: 'Dashboard' },
-    { to: '/dashboard/bookings', text: 'All Bookings' },
+    { to: '/operations', text: 'Operations' },
+    { to: '/operations/bookings', text: 'All Bookings' },
   ];
 
   const fetchBookings = async () => {
@@ -92,11 +92,11 @@ const Bookings = () => {
   };
 
   const handleCheckIn = (bookingId) => {
-    history.push(`/dashboard/check-in-out?booking=${bookingId}&action=checkin`);
+    history.push(`/operations/check-in-out?booking=${bookingId}&action=checkin`);
   };
 
   const handleCheckOut = (bookingId) => {
-    history.push(`/dashboard/check-in-out?booking=${bookingId}&action=checkout`);
+    history.push(`/operations/check-in-out?booking=${bookingId}&action=checkout`);
   };
 
   const getStatusBadge = (status) => {
@@ -178,7 +178,7 @@ const Bookings = () => {
                 <BreadcrumbList items={breadcrumbs} />
               </Col>
               <Col xs="12" md="5" className="text-end">
-                <Button variant="primary" as={NavLink} to="/dashboard/bookings/new">
+                <Button variant="primary" as={NavLink} to="/operations/new-booking">
                   <CsLineIcons icon="plus" className="me-2" />
                   New Booking
                 </Button>

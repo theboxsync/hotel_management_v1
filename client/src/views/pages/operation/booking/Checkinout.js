@@ -41,8 +41,8 @@ const CheckInOut = () => {
   const description = 'Manage guest check-in and check-out processes';
 
   const breadcrumbs = [
-    { to: '/dashboard', text: 'Dashboard' },
-    { to: '/dashboard/check-in-out', text: 'Check-In/Out' },
+    { to: '/operations', text: 'Operations' },
+    { to: '/operations/check-in-out', text: 'Check-In/Out' },
   ];
 
   const fetchData = async () => {

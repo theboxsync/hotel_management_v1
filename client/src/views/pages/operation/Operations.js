@@ -35,16 +35,33 @@ const NavContent = () => {
       <div className="mb-2">
         <Nav.Link as={NavLink} to="/operations/room-categories" className="px-0">
           <CsLineIcons icon="list" className="me-2 sw-3" size="17" />
-          <span className="align-middle">Rooms</span>
+          <span className="align-middle">Room Categories</span>
         </Nav.Link>
         <div>
           <Nav.Link as={NavLink} to="/operations/room-categories" className="px-0 pt-1">
             <i className="me-2 sw-3 d-inline-block" />
-            <span className="align-middle">Room Categories</span>
+            <span className="align-middle">Manage Room Categories</span>
           </Nav.Link>
+          <Nav.Link as={NavLink} to="/operations/room-categories/add" className="px-0 pt-1">
+            <i className="me-2 sw-3 d-inline-block" />
+            <span className="align-middle">Add Room Category</span>
+          </Nav.Link>
+        </div>
+      </div>
+
+      <div className="mb-2">
+        <Nav.Link as={NavLink} to="/operations/rooms" className="px-0">
+          <CsLineIcons icon="list" className="me-2 sw-3" size="17" />
+          <span className="align-middle">Rooms</span>
+        </Nav.Link>
+        <div>
           <Nav.Link as={NavLink} to="/operations/rooms" className="px-0 pt-1">
             <i className="me-2 sw-3 d-inline-block" />
             <span className="align-middle">Manage Rooms</span>
+          </Nav.Link>
+          <Nav.Link as={NavLink} to="/operations/rooms/add" className="px-0 pt-1">
+            <i className="me-2 sw-3 d-inline-block" />
+            <span className="align-middle">Add Room</span>
           </Nav.Link>
         </div>
       </div>
@@ -63,13 +80,21 @@ const mobileNavItems = [
     ],
   },
   {
-    label: 'Rooms',
+    label: 'Room Categories',
     icon: 'main-course',
     items: [
       { label: 'Manage Room Categories', to: '/operations/room-categories' },
-      { label: 'Manage Rooms', to: '/operations/rooms' },
+      { label: 'Add Room Category', to: '/operations/room-categories/add' },
     ],
   },
+  {
+    label: 'Rooms',
+    icon: 'main-course',
+    items: [
+      { label: 'Manage Rooms', to: '/operations/rooms' },
+      { label: 'Add Room', to: '/operations/rooms/add' },
+    ],
+  }
 ];
 
 const MobileNavbar = () => {
@@ -120,14 +145,16 @@ const Operations = () => {
         </div>
       )}
 
-      <Row className="pt-7">
+      <Row>
         {/* Desktop Sidebar */}
-        {width && width >= lgBreakpoint && (
+        {width && width >= lgBreakpoint ? (
           <Col xs="auto" className="d-none d-lg-flex">
             <div className="nav flex-column sw-25 mt-2">
               <NavContent />
             </div>
           </Col>
+        ) : (
+          <div className="pt-7" />
         )}
 
         {/* Main Content - Just shows navigation, actual pages handled by routes.js */}
