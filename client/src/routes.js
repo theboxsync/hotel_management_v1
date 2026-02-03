@@ -4,6 +4,7 @@ import { DEFAULT_PATHS } from 'config.js';
 import withOperationsLayout from 'views/pages/operation/withOperationsLayout';
 import AddEditRoomCategory from 'views/pages/operation/Room/AddEditRoomCategory';
 import AddEditRoom from 'views/pages/operation/Room/AddEditRoom';
+import BookingDetails from 'views/pages/operation/booking/BookingDetails';
 
 const qsr = {
   dashboard: lazy(() => import('views/pages/Dashboard')),
@@ -12,6 +13,7 @@ const qsr = {
 
 const operation = {
   bookings: withOperationsLayout(lazy(() => import('views/pages/operation/booking/Bookings'))),
+  bookingDetails: withOperationsLayout(lazy(() => import('views/pages/operation/booking/BookingDetails'))),
   newBooking: withOperationsLayout(lazy(() => import('views/pages/operation/booking/Newbooking'))),
   checkInOut: withOperationsLayout(lazy(() => import('views/pages/operation/booking/Checkinout'))),
   RoomCategories: withOperationsLayout(lazy(() => import('views/pages/operation/Room/Roomcategories'))),
@@ -43,6 +45,12 @@ const allRoutes = {
       component: qsr.operation,
       subs: [
         {
+          path: '/booking/:id',
+          label: 'Booking Details',
+          hideSub: true,
+          component: operation.bookingDetails,
+        },
+        {
           path: '/bookings',
           label: 'All Bookings',
           hideSub: true,
@@ -73,10 +81,17 @@ const allRoutes = {
           component: operation.AddEditRoomCategory,
         },
         {
-          path: '/room-categories',
+          path: '/room-categories/manage',
           label: 'Room Categories',
           hideSub: true,
           component: operation.RoomCategories,
+        },
+        {
+          path: '/room-categories',
+          label: 'Room Categories',
+          hideSub: true,
+          redirect: true,
+          to: '/operations/room-categories/manage',
         },
         {
           path: '/rooms/add',
@@ -91,10 +106,17 @@ const allRoutes = {
           component: operation.AddEditRoom,
         },
         {
-          path: '/rooms',
+          path: '/rooms/manage',
           label: 'Manage Rooms',
           hideSub: true,
           component: operation.Rooms,
+        },
+        {
+          path: '/rooms',
+          label: 'Rooms',
+          hideSub: true,
+          redirect: true,
+          to: '/operations/rooms/manage',
         },
       ],
     },

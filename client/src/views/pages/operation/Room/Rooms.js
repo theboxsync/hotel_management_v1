@@ -259,24 +259,24 @@ const Rooms = () => {
               <Card.Header className="d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">All Rooms ({rooms.length})</h5>
               </Card.Header>
-              <Card.Body className="p-0">
+              <Card.Body className="p-2">
                 <div className="table-responsive">
-                  <Table hover className="mb-0">
+                  <Table hover className="mb-0 px-3">
                     <thead>
                       <tr>
-                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2">Image</th>
-                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2">Room Number</th>
-                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2">Category</th>
-                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2">Floor</th>
-                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2">Price</th>
-                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2">Status</th>
+                        {/* <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2">Image</th> */}
+                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2 text-center">Room Number</th>
+                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2 text-center">Category</th>
+                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2 text-center">Floor</th>
+                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2 text-center">Price</th>
+                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2 text-center">Status</th>
                         <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2 text-center">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {rooms.map((room) => (
                         <tr key={room._id}>
-                          <td className="pt-2 pb-2 align-middle">
+                          {/* <td className="pt-2 pb-2 align-middle">
                             {room.images && room.images.length > 0 ? (
                               <img
                                 src={getImageUrl(room.images[0])}
@@ -306,18 +306,18 @@ const Rooms = () => {
                                 <CsLineIcons icon="image" size="20" className="text-muted" />
                               </div>
                             )}
-                          </td>
-                          <td className="pt-2 pb-2 align-middle">
+                          </td> */}
+                          <td className="pt-2 pb-2 align-middle text-center">
                             <div className="fw-bold">{room.room_number}</div>
                           </td>
-                          <td className="pt-2 pb-2 align-middle">
+                          <td className="pt-2 pb-2 align-middle text-center">
                             {room.category_details?.category_name || 'N/A'}
                           </td>
-                          <td className="pt-2 pb-2 align-middle">{room.floor}</td>
-                          <td className="pt-2 pb-2 align-middle fw-bold">
+                          <td className="pt-2 pb-2 align-middle text-center">{room.floor}</td>
+                          <td className="pt-2 pb-2 align-middle text-center fw-bold">
                             {process.env.REACT_APP_CURRENCY} {room.current_price}
                           </td>
-                          <td className="pt-2 pb-2 align-middle">
+                          <td className="pt-2 pb-2 align-middle text-center">
                             <Dropdown className="d-inline-block">
                               <Dropdown.Toggle
                                 variant="link"
@@ -346,7 +346,7 @@ const Rooms = () => {
                               </Dropdown.Menu>
                             </Dropdown>
                           </td>
-                          <td className="pt-2 pb-2 align-middle text-center">
+                          <td className="pt-2 pb-2 align-middle text-center text-center">
                             <div className="d-flex gap-2 justify-content-center">
                               <Button
                                 variant="outline-primary"

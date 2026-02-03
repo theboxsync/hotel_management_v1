@@ -6,6 +6,7 @@ import HtmlHead from 'components/html-head/HtmlHead';
 import BreadcrumbList from 'components/breadcrumb-list/BreadcrumbList';
 import CsLineIcons from 'cs-line-icons/CsLineIcons';
 import axios from 'axios';
+import { roomCategoryAPI } from 'services/api';
 
 const API_URL = process.env.REACT_APP_API || 'http://localhost:5000/api';
 
@@ -20,7 +21,8 @@ const AddEditRoomCategory = () => {
         category_name: '',
         base_price: '',
         max_occupancy: '',
-        amenities: '',
+        amenities: [],
+        amenityInput: '',
         description: '',
         images: [],
     });
@@ -40,16 +42,18 @@ const AddEditRoomCategory = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/rooms/category/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            // const response = await axios.get(`${API_URL}/rooms/category/${id}`, {
+            //     headers: { Authorization: `Bearer ${token}` }
+            // });
 
+            const response = await roomCategoryAPI.getOne(id);
             const { category } = response.data.data;
             setFormData({
                 category_name: category.category_name,
                 base_price: category.base_price,
                 max_occupancy: category.max_occupancy,
-                amenities: Array.isArray(category.amenities) ? category.amenities.join(', ') : '',
+                amenities: Array.isArray(category.amenities) ? category.amenities : [],
+                amenityInput: '',
                 description: category.description || '',
                 images: category.images || [],
             });
@@ -131,10 +135,8 @@ const AddEditRoomCategory = () => {
             formDataToSend.append('max_occupancy', formData.max_occupancy);
             formDataToSend.append('description', formData.description || '');
 
-            const amenitiesArray = formData.amenities
-                .split(',')
-                .map((a) => a.trim())
-                .filter((a) => a);
+            const amenitiesArray = formData.amenities.map((a) => a.trim()).filter(Boolean);
+
             amenitiesArray.forEach(amenity => {
                 formDataToSend.append('amenities[]', amenity);
             });
@@ -150,28 +152,10 @@ const AddEditRoomCategory = () => {
             const token = localStorage.getItem('token');
 
             if (isEditMode) {
-                await axios.put(
-                    `${API_URL}/rooms/category/${id}`,
-                    formDataToSend,
-                    {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                            'Authorization': `Bearer ${token}`
-                        }
-                    }
-                );
+                await roomCategoryAPI.update(id, formDataToSend);
                 toast.success('Category updated successfully');
             } else {
-                await axios.post(
-                    `${API_URL}/rooms/category`,
-                    formDataToSend,
-                    {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                            'Authorization': `Bearer ${token}`
-                        }
-                    }
-                );
+                await roomCategoryAPI.create(formDataToSend);
                 toast.success('Category created successfully');
             }
 
@@ -188,6 +172,43 @@ const AddEditRoomCategory = () => {
         previewUrls.forEach(url => URL.revokeObjectURL(url));
         history.push('/operations/room-categories');
     };
+
+    const addAmenityTag = (value) => {
+        const tag = value.trim();
+
+        if (!tag) return;
+
+        // avoid duplicates
+        if (formData.amenities.includes(tag)) return;
+
+        setFormData((prev) => ({
+            ...prev,
+            amenities: [...prev.amenities, tag],
+            amenityInput: '',
+        }));
+    };
+
+    const removeAmenityTag = (index) => {
+        setFormData((prev) => {
+            const updated = [...prev.amenities];
+            updated.splice(index, 1);
+            return { ...prev, amenities: updated };
+        });
+    };
+
+    const handleAmenityKeyDown = (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault(); // stop form submit
+
+            addAmenityTag(formData.amenityInput);
+        }
+
+        // Optional: backspace removes last tag if input empty
+        if (e.key === 'Backspace' && !formData.amenityInput && formData.amenities.length > 0) {
+            removeAmenityTag(formData.amenities.length - 1);
+        }
+    };
+
 
     if (loading) {
         return (
@@ -285,15 +306,43 @@ const AddEditRoomCategory = () => {
                                             <Col md={12}>
                                                 <Form.Group>
                                                     <Form.Label>Amenities</Form.Label>
-                                                    <Form.Control
-                                                        type="text"
-                                                        name="amenities"
-                                                        value={formData.amenities}
-                                                        onChange={handleChange}
-                                                        placeholder="WiFi, AC, TV, Mini Bar, Room Service"
-                                                    />
+
+                                                    <div className="border rounded p-2 d-flex flex-wrap gap-2">
+                                                        {/* Tags */}
+                                                        {formData.amenities.map((tag, index) => (
+                                                            <Badge
+                                                                key={`${tag}-${index}`}
+                                                                bg="primary"
+                                                                className="d-flex align-items-center gap-2 px-2 py-1"
+                                                            >
+                                                                {tag}
+                                                                <Button
+                                                                    variant="link"
+                                                                    className="p-0 text-white"
+                                                                    style={{ lineHeight: 1 }}
+                                                                    onClick={() => removeAmenityTag(index)}
+                                                                >
+                                                                    <CsLineIcons icon="close" size="14" />
+                                                                </Button>
+                                                            </Badge>
+                                                        ))}
+
+                                                        {/* Input */}
+                                                        <Form.Control
+                                                            type="text"
+                                                            value={formData.amenityInput}
+                                                            onChange={(e) =>
+                                                                setFormData((prev) => ({ ...prev, amenityInput: e.target.value }))
+                                                            }
+                                                            onKeyDown={handleAmenityKeyDown}
+                                                            placeholder="Type amenity and press Enter or comma"
+                                                            className="border-0 shadow-none flex-grow-1"
+                                                            style={{ minWidth: '200px' }}
+                                                        />
+                                                    </div>
+
                                                     <Form.Text className="text-muted">
-                                                        Separate multiple amenities with commas
+                                                        Press <b>Enter</b> or <b>,</b> to add amenity as tag
                                                     </Form.Text>
                                                 </Form.Group>
                                             </Col>

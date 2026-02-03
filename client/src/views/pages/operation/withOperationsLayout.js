@@ -37,7 +37,7 @@ const NavContent = () => {
           <span className="align-middle">Room Categories</span>
         </Nav.Link>
         <div>
-          <Nav.Link as={NavLink} to="/operations/room-categories" className="px-0 pt-1">
+          <Nav.Link as={NavLink} to="/operations/room-categories/manage" className="px-0 pt-1">
             <i className="me-2 sw-3 d-inline-block" />
             <span className="align-middle">Manage Room Categories</span>
           </Nav.Link>
@@ -54,7 +54,7 @@ const NavContent = () => {
           <span className="align-middle">Rooms</span>
         </Nav.Link>
         <div>
-          <Nav.Link as={NavLink} to="/operations/rooms" className="px-0 pt-1">
+          <Nav.Link as={NavLink} to="/operations/rooms/manage" className="px-0 pt-1">
             <i className="me-2 sw-3 d-inline-block" />
             <span className="align-middle">Manage Rooms</span>
           </Nav.Link>
@@ -82,7 +82,7 @@ const mobileNavItems = [
     label: 'Room Categories',
     icon: 'main-course',
     items: [
-      { label: 'Manage Room Categories', to: '/operations/room-categories' },
+      { label: 'Manage Room Categories', to: '/operations/room-categories/manage' },
       { label: 'Add Room Category', to: '/operations/room-categories/add' },
     ],
   },
@@ -90,7 +90,7 @@ const mobileNavItems = [
     label: 'Rooms',
     icon: 'main-course',
     items: [
-      { label: 'Manage Rooms', to: '/operations/rooms' },
+      { label: 'Manage Rooms', to: '/operations/rooms/manage' },
       { label: 'Add Room', to: '/operations/rooms/add' },
     ],
   },

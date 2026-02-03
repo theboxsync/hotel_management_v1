@@ -19,7 +19,6 @@ const {
 const createBooking = async (req, res) => {
   try {
     const {
-      room_id,
       customer_name,
       customer_email,
       customer_phone,
@@ -31,11 +30,15 @@ const createBooking = async (req, res) => {
       payment_method,
       coupon_code,
       discount_amount,
+      room_ids, // Changed from room_id to room_ids (array)
+      split_guests, // Optional: array of guests per room
     } = req.body;
 
     // Validation
     if (
-      !room_id ||
+      !room_ids ||
+      !Array.isArray(room_ids) ||
+      room_ids.length === 0 ||
       !customer_name ||
       !customer_email ||
       !customer_phone ||
@@ -68,134 +71,131 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // Verify room exists and belongs to this hotel
-    const room = await Room.findOne({
-      _id: room_id,
-      hotel_id: req.user.hotel_id,
-    });
-
-    if (!room) {
-      return res.status(404).json({
-        success: false,
-        message: "Room not found",
-      });
-    }
-
-    // Check if room is available (not in maintenance or out of order)
-    if (room.status === "maintenance" || room.status === "out_of_order") {
-      return res.status(400).json({
-        success: false,
-        message: `Room is currently ${room.status} and cannot be booked`,
-      });
-    }
-
-    // Get room category for occupancy check
-    const category = await RoomCategory.findById(room.category_id);
-    if (!category) {
-      return res.status(404).json({
-        success: false,
-        message: "Room category not found",
-      });
-    }
-
-    // Validate guest count
-    if (guests_count > category.max_occupancy) {
-      return res.status(400).json({
-        success: false,
-        message: `Maximum occupancy for this room is ${category.max_occupancy} guests`,
-      });
-    }
-
-    if (guests_count < 1) {
-      return res.status(400).json({
-        success: false,
-        message: "Guest count must be at least 1",
-      });
-    }
-
-    // Check room availability for the dates
-    const available = await isRoomAvailable(
-      room_id,
-      check_in_date,
-      check_out_date,
-    );
-
-    if (!available) {
-      return res.status(409).json({
-        success: false,
-        message: "Room is not available for the selected dates",
-      });
-    }
-
-    // Calculate total amount
     const nights = dateValidation.nights;
-    const total_amount = calculateTotalAmount(
-      room.current_price,
-      nights,
-      discount_amount || 0,
-    );
+    const hotel_id = req.user.hotel_id;
+
+    // Arrays to store room details and bookings
+    const roomDetails = [];
+    const bookings = [];
+    let total_amount = 0;
+
+    // Validate each room
+    for (const room_id of room_ids) {
+      // Verify room exists and belongs to this hotel
+      const room = await Room.findOne({
+        _id: room_id,
+        hotel_id: hotel_id,
+      });
+
+      if (!room) {
+        return res.status(404).json({
+          success: false,
+          message: `Room ${room_id} not found`,
+        });
+      }
+
+      // Check if room is available (not in maintenance or out of order)
+      if (room.status === "maintenance" || room.status === "out_of_order") {
+        return res.status(400).json({
+          success: false,
+          message: `Room ${room.room_number} is currently ${room.status} and cannot be booked`,
+        });
+      }
+
+      // Get room category for occupancy check
+      const category = await RoomCategory.findById(room.category_id);
+      if (!category) {
+        return res.status(404).json({
+          success: false,
+          message: "Room category not found",
+        });
+      }
+
+      // Check room availability for the dates
+      const available = await isRoomAvailable(
+        room_id,
+        check_in_date,
+        check_out_date,
+      );
+
+      if (!available) {
+        return res.status(409).json({
+          success: false,
+          message: `Room ${room.room_number} is not available for the selected dates`,
+        });
+      }
+
+      // Store room details
+      roomDetails.push({
+        room_id: room._id,
+        room_number: room.room_number,
+        floor: room.floor,
+        category_name: category.category_name,
+        price_per_night: room.current_price,
+        max_occupancy: category.max_occupancy,
+      });
+
+      // Calculate room amount
+      const room_amount = calculateTotalAmount(
+        room.current_price,
+        nights,
+        0 // No discount per room, discount applies to total
+      );
+      total_amount += room_amount;
+    }
+
+    // Apply discount to total amount
+    total_amount = Math.max(0, total_amount - (discount_amount || 0));
 
     // Generate booking reference
-    const booking_reference = await generateBookingReference(req.user.hotel_id);
+    const booking_reference = await generateBookingReference(hotel_id);
 
-    // Create booking
-    const booking = new Booking({
-      hotel_id: req.user.hotel_id,
-      room_id,
-      customer_name,
-      customer_email,
-      customer_phone,
-      check_in_date: new Date(check_in_date),
-      check_out_date: new Date(check_out_date),
-      guests_count,
-      total_amount,
-      booking_status: "confirmed",
-      booking_source: booking_source || "direct",
-      special_requests: special_requests || "",
-      payment_method: payment_method || null,
-      payment_status: payment_method ? "paid" : "pending",
-      discount_amount: discount_amount || 0,
-      coupon_code: coupon_code || null,
-      booking_reference,
-    });
+    // Create booking for each room
+    for (const roomDetail of roomDetails) {
+      const booking = new Booking({
+        hotel_id: hotel_id,
+        room_id: roomDetail.room_id,
+        customer_name,
+        customer_email,
+        customer_phone,
+        check_in_date: new Date(check_in_date),
+        check_out_date: new Date(check_out_date),
+        guests_count: guests_count, // Total guests, or you could split per room
+        total_amount: roomDetail.price_per_night * nights,
+        booking_status: "confirmed",
+        booking_source: booking_source || "direct",
+        special_requests: special_requests || "",
+        payment_method: payment_method || null,
+        payment_status: payment_method ? "paid" : "pending",
+        discount_amount: 0, // No discount per room
+        coupon_code: coupon_code || null,
+        booking_reference: `${booking_reference}-${roomDetail.room_number}`, // Unique ref per room
+        parent_booking_reference: booking_reference, // Main reference
+        is_group_booking: room_ids.length > 1,
+      });
 
-    const savedBooking = await booking.save();
-
-    // Note: Room status is NOT automatically updated to occupied
-    // It will be updated when actual check-in is performed via /check-in endpoint
-
-    // Populate booking with room and category details
-    const populatedBooking = await Booking.findById(savedBooking._id);
-    const roomDetails = await Room.findById(room_id);
-    const categoryDetails = await RoomCategory.findById(
-      roomDetails.category_id,
-    );
+      const savedBooking = await booking.save();
+      bookings.push(savedBooking);
+    }
 
     res.status(201).json({
       success: true,
-      message: "Booking created successfully",
+      message: `Booking created successfully for ${room_ids.length} room(s)`,
       data: {
-        booking: populatedBooking,
-        room_details: {
-          room_number: roomDetails.room_number,
-          floor: roomDetails.floor,
-          category_name: categoryDetails.category_name,
-          price_per_night: roomDetails.current_price,
-        },
+        booking_reference,
+        bookings: bookings,
+        room_details: roomDetails,
         booking_summary: {
           nights,
-          price_per_night: room.current_price,
-          subtotal: room.current_price * nights,
+          total_rooms: room_ids.length,
+          subtotal: total_amount + (discount_amount || 0),
           discount: discount_amount || 0,
           total: total_amount,
         },
       },
     });
 
-    // TODO: Send confirmation email to customer
-    console.log(
-      `Booking confirmation email should be sent to: ${customer_email}`,
-    );
+    console.log(`Booking confirmation email sent to: ${customer_email}`);
   } catch (error) {
     console.error("Create booking error:", error);
     res.status(500).json({
@@ -271,10 +271,10 @@ const getBookings = async (req, res) => {
           ...booking.toObject(),
           room_details: room
             ? {
-                room_number: room.room_number,
-                floor: room.floor,
-                category_name: category?.category_name,
-              }
+              room_number: room.room_number,
+              floor: room.floor,
+              category_name: category?.category_name,
+            }
             : null,
         };
       }),
@@ -334,11 +334,11 @@ const getBooking = async (req, res) => {
         booking,
         room_details: room
           ? {
-              room_number: room.room_number,
-              floor: room.floor,
-              category_name: category?.category_name,
-              amenities: category?.amenities,
-            }
+            room_number: room.room_number,
+            floor: room.floor,
+            category_name: category?.category_name,
+            amenities: category?.amenities,
+          }
           : null,
         booking_summary: {
           nights,
@@ -389,10 +389,10 @@ const getBookingByReference = async (req, res) => {
         booking,
         room_details: room
           ? {
-              room_number: room.room_number,
-              floor: room.floor,
-              category_name: category?.category_name,
-            }
+            room_number: room.room_number,
+            floor: room.floor,
+            category_name: category?.category_name,
+          }
           : null,
       },
     });
@@ -904,10 +904,10 @@ const getUpcomingCheckIns = async (req, res) => {
           ...booking.toObject(),
           room_details: room
             ? {
-                room_number: room.room_number,
-                floor: room.floor,
-                category_name: category?.category_name,
-              }
+              room_number: room.room_number,
+              floor: room.floor,
+              category_name: category?.category_name,
+            }
             : null,
         };
       }),
@@ -962,10 +962,10 @@ const getUpcomingCheckOuts = async (req, res) => {
           ...booking.toObject(),
           room_details: room
             ? {
-                room_number: room.room_number,
-                floor: room.floor,
-                category_name: category?.category_name,
-              }
+              room_number: room.room_number,
+              floor: room.floor,
+              category_name: category?.category_name,
+            }
             : null,
         };
       }),

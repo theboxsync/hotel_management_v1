@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Button, Badge, Spinner, Alert } from 'react-bootstrap';
+import { Card, Row, Col, Button, Badge, Spinner, Alert, Modal, Carousel } from 'react-bootstrap';
 import { useHistory } from 'react-router-dom';
 import { roomCategoryAPI } from 'services/api';
 import { toast } from 'react-toastify';
 import HtmlHead from 'components/html-head/HtmlHead';
 import BreadcrumbList from 'components/breadcrumb-list/BreadcrumbList';
 import CsLineIcons from 'cs-line-icons/CsLineIcons';
+import CarouselGallery from 'components/carousel/CarouselGallery';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.REACT_APP_API || 'http://localhost:5000/api';
 
 const RoomCategories = () => {
   const history = useHistory();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const title = 'Room Categories';
   const description = 'Manage room categories and pricing';
@@ -39,8 +42,13 @@ const RoomCategories = () => {
     fetchCategories();
   }, []);
 
-  const handleView = (id) => {
+  const handleViewRooms = (id) => {
     history.push(`/operations/rooms?category_id=${id}`);
+  };
+
+  const handleViewDetails = (category) => {
+    setSelectedCategory(category);
+    setShowDetailsModal(true);
   };
 
   const handleEdit = (id) => {
@@ -66,10 +74,33 @@ const RoomCategories = () => {
     }
   };
 
+  const closeDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedCategory(null);
+  };
+
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
     return `${API_URL.replace('/api', '')}${imagePath}`;
+  };
+
+  // Prepare gallery items for GlideGallery
+  const getGalleryItems = (category) => {
+    if (!category || !category.images || category.images.length === 0) {
+      return [{
+        large: 'https://via.placeholder.com/800x600?text=No+Image',
+        thumb: 'https://via.placeholder.com/200x150?text=No+Image',
+      }];
+    }
+
+    return category.images.map(image => {
+      const imageUrl = getImageUrl(image);
+      return {
+        large: imageUrl,
+        thumb: imageUrl, // Using same image for thumb, you can create thumbnails if needed
+      };
+    });
   };
 
   if (loading) {
@@ -114,8 +145,11 @@ const RoomCategories = () => {
                 <Col key={category._id} md={6} lg={4}>
                   <Card className="h-100 hover-border-primary">
                     {/* Category Image */}
-                    {category.images && category.images.length > 0 && (
-                      <div style={{ height: '200px', overflow: 'hidden', position: 'relative' }}>
+                    {category.images && category.images.length > 0 ? (
+                      <div
+                        style={{ height: '200px', overflow: 'hidden', position: 'relative', cursor: 'pointer' }}
+                        onClick={() => handleViewDetails(category)}
+                      >
                         <Card.Img
                           variant="top"
                           src={getImageUrl(category.images[0])}
@@ -133,6 +167,41 @@ const RoomCategories = () => {
                             {category.images.length} photos
                           </Badge>
                         )}
+                        <div
+                          className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                          style={{
+                            background: 'rgba(0,0,0,0)',
+                            transition: 'background 0.3s',
+                            opacity: 0
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(0,0,0,0.5)';
+                            e.currentTarget.style.opacity = 1;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(0,0,0,0)';
+                            e.currentTarget.style.opacity = 0;
+                          }}
+                        >
+                          <Badge bg="light" text="dark" className="p-2">
+                            <CsLineIcons icon="eye" className="me-1" />
+                            Click to view details
+                          </Badge>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          height: '200px',
+                          backgroundColor: '#f0f0f0',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => handleViewDetails(category)}
+                      >
+                        <CsLineIcons icon="image" size="40" className="text-muted" />
                       </div>
                     )}
 
@@ -205,15 +274,32 @@ const RoomCategories = () => {
                       )}
 
                       <div className="d-flex gap-2 mt-3">
-                        <Button variant="outline-primary" size="sm" className="flex-grow-1" onClick={() => handleView(category._id)}>
-                          <CsLineIcons icon="eye" className="me-1" />
-                          View
-                        </Button>
                         <Button
                           variant="outline-primary"
                           size="sm"
                           className="flex-grow-1"
+                          onClick={() => handleViewRooms(category._id)}
+                          title="View rooms in this category"
+                        >
+                          <CsLineIcons icon="home" className="me-1" />
+                          Rooms
+                        </Button>
+                        <Button
+                          variant="outline-info"
+                          size="sm"
+                          className="flex-grow-1"
+                          onClick={() => handleViewDetails(category)}
+                          title="View full category details"
+                        >
+                          <CsLineIcons icon="eye" className="me-1" />
+                          Details
+                        </Button>
+                        <Button
+                          variant="outline-secondary"
+                          size="sm"
+                          className="flex-grow-1"
                           onClick={() => handleEdit(category._id)}
+                          title="Edit category"
                         >
                           <CsLineIcons icon="edit" className="me-1" />
                           Edit
@@ -221,11 +307,10 @@ const RoomCategories = () => {
                         <Button
                           variant="outline-danger"
                           size="sm"
-                          className="flex-grow-1"
                           onClick={() => handleDelete(category._id)}
+                          title="Delete category"
                         >
-                          <CsLineIcons icon="bin" className="me-1" />
-                          Delete
+                          <CsLineIcons icon="bin" />
                         </Button>
                       </div>
                     </Card.Body>
@@ -236,6 +321,148 @@ const RoomCategories = () => {
           )}
         </Col>
       </Row>
+
+      {/* Category Details Modal */}
+      <Modal
+        show={showDetailsModal}
+        onHide={closeDetailsModal}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <CsLineIcons icon="eye" className="me-2" />
+            Category Details
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedCategory && (
+            <>
+              {/* Image Carousel */}
+              {selectedCategory.images && selectedCategory.images.length > 0 && (
+                <div className="mb-4">
+                  {getGalleryItems(selectedCategory) && (
+                    <CarouselGallery
+                      galleyItems={getGalleryItems(selectedCategory)}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Category Information */}
+              <div className="mb-4">
+                <Row className="align-items-center mb-3">
+                  <Col>
+                    <h4 className="mb-0">{selectedCategory.category_name}</h4>
+                  </Col>
+                  <Col xs="auto">
+                    <Badge bg="primary" className="p-2 fs-6">
+                      <CsLineIcons icon="dollar-sign" className="me-1" />
+                      {process.env.REACT_APP_CURRENCY} {selectedCategory.base_price}/night
+                    </Badge>
+                  </Col>
+                </Row>
+
+                {/* Statistics */}
+                <Row className="g-3 mb-4">
+                  <Col xs={6} md={3}>
+                    <Card className="text-center border-primary">
+                      <Card.Body className="p-3">
+                        <CsLineIcons icon="user" size="20" className="text-primary mb-2" />
+                        <div className="text-muted small">Max Guests</div>
+                        <div className="fw-bold fs-5">{selectedCategory.max_occupancy}</div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                  <Col xs={6} md={3}>
+                    <Card className="text-center border-info">
+                      <Card.Body className="p-3">
+                        <CsLineIcons icon="home" size="20" className="text-info mb-2" />
+                        <div className="text-muted small">Total Rooms</div>
+                        <div className="fw-bold fs-5">{selectedCategory.total_rooms || 0}</div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                  <Col xs={6} md={3}>
+                    <Card className="text-center border-success">
+                      <Card.Body className="p-3">
+                        <CsLineIcons icon="check-circle" size="20" className="text-success mb-2" />
+                        <div className="text-muted small">Available</div>
+                        <div className="fw-bold fs-5 text-success">{selectedCategory.available_rooms || 0}</div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                  <Col xs={6} md={3}>
+                    <Card className="text-center border-primary">
+                      <Card.Body className="p-3">
+                        <CsLineIcons icon="key" size="20" className="text-primary mb-2" />
+                        <div className="text-muted small">Occupied</div>
+                        <div className="fw-bold fs-5 text-primary">{selectedCategory.occupied_rooms || 0}</div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                </Row>
+
+                {/* Description */}
+                {selectedCategory.description && (
+                  <div className="mb-4">
+                    <h5 className="mb-2">
+                      <CsLineIcons icon="file-text" className="me-2" />
+                      Description
+                    </h5>
+                    <p className="text-muted mb-0">{selectedCategory.description}</p>
+                  </div>
+                )}
+
+                {/* Amenities */}
+                {selectedCategory.amenities && selectedCategory.amenities.length > 0 && (
+                  <div className="mb-4">
+                    <h5 className="mb-3">
+                      <CsLineIcons icon="star" className="me-2" />
+                      Amenities
+                    </h5>
+                    <Row className="g-2">
+                      {selectedCategory.amenities.map((amenity, index) => (
+                        <Col xs={6} md={4} key={index}>
+                          <div className="d-flex align-items-center p-2 border rounded">
+                            <CsLineIcons icon="check" className="text-success me-2" size="16" />
+                            <span>{amenity}</span>
+                          </div>
+                        </Col>
+                      ))}
+                    </Row>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="outline-primary"
+            onClick={() => {
+              closeDetailsModal();
+              handleViewRooms(selectedCategory._id);
+            }}
+          >
+            <CsLineIcons icon="home" className="me-2" />
+            View Rooms
+          </Button>
+          <Button
+            variant="outline-secondary"
+            onClick={() => {
+              closeDetailsModal();
+              handleEdit(selectedCategory._id);
+            }}
+          >
+            <CsLineIcons icon="edit" className="me-2" />
+            Edit Category
+          </Button>
+          <Button variant="secondary" onClick={closeDetailsModal}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </>
   );
 };

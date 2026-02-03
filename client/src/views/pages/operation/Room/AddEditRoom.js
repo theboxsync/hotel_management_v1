@@ -184,28 +184,10 @@ const AddEditRoom = () => {
             const token = localStorage.getItem('token');
 
             if (isEditMode) {
-                await axios.put(
-                    `${API_URL}/rooms/${id}`,
-                    formDataToSend,
-                    {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                            'Authorization': `Bearer ${token}`
-                        }
-                    }
-                );
+                await roomAPI.update(id, formDataToSend);
                 toast.success('Room updated successfully');
             } else {
-                await axios.post(
-                    `${API_URL}/rooms`,
-                    formDataToSend,
-                    {
-                        headers: {
-                            'Content-Type': 'multipart/form-data',
-                            'Authorization': `Bearer ${token}`
-                        }
-                    }
-                );
+                await roomAPI.create(formDataToSend);
                 toast.success('Room created successfully');
             }
 
@@ -422,7 +404,7 @@ const AddEditRoom = () => {
                                                 </Col>
 
                                                 {/* Room Images */}
-                                                <Col md={12}>
+                                                {/* <Col md={12}>
                                                     <h5 className="mb-3">Room Images</h5>
                                                     <Form.Group>
                                                         <Form.Label>Upload Images (Max 10)</Form.Label>
@@ -438,7 +420,6 @@ const AddEditRoom = () => {
                                                         </Form.Text>
                                                     </Form.Group>
 
-                                                    {/* Image Previews */}
                                                     {(formData.images.length > 0 || previewUrls.length > 0) && (
                                                         <div className="mt-3">
                                                             <Form.Label>Preview:</Form.Label>
@@ -487,7 +468,7 @@ const AddEditRoom = () => {
                                                             </Row>
                                                         </div>
                                                     )}
-                                                </Col>
+                                                </Col> */}
 
                                                 {/* Action Buttons */}
                                                 <Col md={12}>

@@ -45,6 +45,9 @@ const BookingSchema = new Schema({
   discount_amount: { type: Number, default: 0 },
   coupon_code: { type: String },
   booking_reference: { type: String, unique: true },
+  parent_booking_reference: { type: String }, 
+  is_group_booking: { type: Boolean, default: false },
+  group_booking_id: { type: String }, 
 
   // Additional tracking
   early_check_in: { type: Boolean, default: false },
@@ -60,6 +63,9 @@ const BookingSchema = new Schema({
 BookingSchema.index({ hotel_id: 1, check_in_date: 1, check_out_date: 1 });
 BookingSchema.index({ booking_reference: 1 });
 BookingSchema.index({ customer_email: 1 });
+
+BookingSchema.index({ parent_booking_reference: 1 });
+BookingSchema.index({ is_group_booking: 1 });
 
 // Update timestamp on save
 BookingSchema.pre("save", async function () {
