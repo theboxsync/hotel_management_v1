@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Button, Form, Badge, Spinner, Alert, Table, Dropdown } from 'react-bootstrap';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { roomAPI, roomCategoryAPI } from 'services/api';
 import { toast } from 'react-toastify';
 import HtmlHead from 'components/html-head/HtmlHead';
 import BreadcrumbList from 'components/breadcrumb-list/BreadcrumbList';
 import CsLineIcons from 'cs-line-icons/CsLineIcons';
 
-const API_URL = process.env.REACT_APP_API || 'http://localhost:5000/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const Rooms = () => {
   const history = useHistory();
-  const location = useLocation();
   const [rooms, setRooms] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,14 +19,12 @@ const Rooms = () => {
     status: '',
     floor: '',
   });
-  const [filtersInitialized, setFiltersInitialized] = useState(false);
-
 
   const title = 'Manage Rooms';
   const description = 'Manage hotel rooms and their status';
 
   const breadcrumbs = [
-    { to: '/operations', text: 'Operations' },
+    { to: '/dashboard', text: 'Dashboard' },
     { to: '/operations/rooms', text: 'Manage Rooms' },
   ];
 
@@ -59,39 +56,9 @@ const Rooms = () => {
   };
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const category_id = searchParams.get("category_id");
-
-    if (category_id) {
-      setFilters((prev) => ({
-        ...prev,
-        category_id,
-      }));
-    }
-
-    setFiltersInitialized(true);
-  }, []);
-
-
-  useEffect(() => {
-    if (!filtersInitialized) return;
-
     fetchRooms();
     fetchCategories();
-  }, [filters, filtersInitialized]);
-
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const category_id = searchParams.get("category_id");
-
-    if (category_id) {
-      setFilters((prev) => ({
-        ...prev,
-        category_id,
-      }));
-    }
-  }, [location.search]);
-
+  }, [filters]);
 
   const handleFilterChange = (e) => {
     setFilters({
@@ -259,16 +226,16 @@ const Rooms = () => {
               <Card.Header className="d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">All Rooms ({rooms.length})</h5>
               </Card.Header>
-              <Card.Body className="p-2">
+              <Card.Body className="px-3">
                 <div className="table-responsive">
-                  <Table hover className="mb-0 px-3">
+                  <Table hover className="mb-0">
                     <thead>
                       <tr>
                         {/* <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2">Image</th> */}
-                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2 text-center">Room Number</th>
-                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2 text-center">Category</th>
-                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2 text-center">Floor</th>
-                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2 text-center">Price</th>
+                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2">Room Number</th>
+                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2">Category</th>
+                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2">Floor</th>
+                        <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2">Price</th>
                         <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2 text-center">Status</th>
                         <th className="text-muted text-small text-uppercase border-top-0 pt-3 pb-2 text-center">Actions</th>
                       </tr>
@@ -307,21 +274,21 @@ const Rooms = () => {
                               </div>
                             )}
                           </td> */}
-                          <td className="pt-2 pb-2 align-middle text-center">
+                          <td className="pt-2 pb-2 align-middle">
                             <div className="fw-bold">{room.room_number}</div>
                           </td>
-                          <td className="pt-2 pb-2 align-middle text-center">
+                          <td className="pt-2 pb-2 align-middle">
                             {room.category_details?.category_name || 'N/A'}
                           </td>
-                          <td className="pt-2 pb-2 align-middle text-center">{room.floor}</td>
-                          <td className="pt-2 pb-2 align-middle text-center fw-bold">
+                          <td className="pt-2 pb-2 align-middle">{room.floor}</td>
+                          <td className="pt-2 pb-2 align-middle fw-bold">
                             {process.env.REACT_APP_CURRENCY} {room.current_price}
                           </td>
                           <td className="pt-2 pb-2 align-middle text-center">
-                            <Dropdown className="d-inline-block">
+                            <Dropdown className="d-flex justify-content-center align-items-center">
                               <Dropdown.Toggle
-                                variant="link"
-                                className="p-0 border-0 bg-transparent shadow-none"
+                                variant='link'
+                                className="p-2 border bg-transparent shadow-none d-flex align-items-center gap-1"
                                 id={`status-${room._id}`}
                               >
                                 {getStatusBadge(room.status)}
@@ -346,7 +313,7 @@ const Rooms = () => {
                               </Dropdown.Menu>
                             </Dropdown>
                           </td>
-                          <td className="pt-2 pb-2 align-middle text-center text-center">
+                          <td className="pt-2 pb-2 align-middle text-center">
                             <div className="d-flex gap-2 justify-content-center">
                               <Button
                                 variant="outline-primary"

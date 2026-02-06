@@ -30,7 +30,7 @@ const performCheckIn = async (req, res) => {
       });
     }
 
-    // Check booking status
+    // ❌ Status validations
     if (booking.booking_status === "cancelled") {
       return res.status(400).json({
         success: false,
@@ -41,7 +41,7 @@ const performCheckIn = async (req, res) => {
     if (booking.booking_status === "checked_in") {
       return res.status(400).json({
         success: false,
-        message: "Guest is already checked in",
+        message: "Guest already checked in",
         actual_check_in: booking.actual_check_in,
       });
     }
@@ -49,38 +49,36 @@ const performCheckIn = async (req, res) => {
     if (booking.booking_status === "checked_out") {
       return res.status(400).json({
         success: false,
-        message: "This booking has already been completed",
+        message: "Booking already completed",
       });
     }
 
-    // Record actual check-in time
+    // ✅ Perform check-in
     const now = new Date();
     booking.actual_check_in = now;
     booking.booking_status = "checked_in";
     booking.checked_in_by = req.user._id.toString();
 
-    // Check if early check-in (before expected date)
-    const expectedCheckIn = new Date(booking.check_in_date);
-    expectedCheckIn.setHours(0, 0, 0, 0);
-    const actualCheckInDate = new Date(now);
-    actualCheckInDate.setHours(0, 0, 0, 0);
+    // Early check-in detection
+    const expected = new Date(booking.check_in_date);
+    expected.setHours(0, 0, 0, 0);
+    const actual = new Date(now);
+    actual.setHours(0, 0, 0, 0);
 
-    if (actualCheckInDate < expectedCheckIn) {
-      booking.early_check_in = true;
-    }
+    if (actual < expected) booking.early_check_in = true;
 
-    // Update payment information if provided
+    // Payment updates
     if (payment_method) booking.payment_method = payment_method;
     if (payment_status) booking.payment_status = payment_status;
 
-    // Add extra charges if any
+    // Extra charges
     if (extra_charges) {
       booking.extra_charges = extra_charges;
       booking.extra_charges_description =
         extra_charges_description || "Additional charges";
     }
 
-    // Add notes to special requests
+    // Notes
     if (notes) {
       booking.special_requests = booking.special_requests
         ? `${booking.special_requests}\n\nCheck-in Notes: ${notes}`
@@ -89,17 +87,26 @@ const performCheckIn = async (req, res) => {
 
     await booking.save();
 
-    // Update room status to occupied
-    const room = await Room.findById(booking.room_id);
-    if (room) {
-      room.status = "occupied";
-      await room.save();
-    }
+    // 🏨 Update ALL rooms to occupied
+    await Room.updateMany(
+      { _id: { $in: booking.room_ids } },
+      { $set: { status: "occupied" } }
+    );
 
-    // Get room details
-    const category = room
-      ? await RoomCategory.findById(room.category_id)
-      : null;
+    // 🔍 Fetch room details
+    const rooms = await Room.find({ _id: { $in: booking.room_ids } });
+
+    const roomDetails = await Promise.all(
+      rooms.map(async (room) => {
+        const category = await RoomCategory.findById(room.category_id);
+        return {
+          room_id: room._id,
+          room_number: room.room_number,
+          floor: room.floor,
+          category_name: category?.category_name,
+        };
+      })
+    );
 
     res.status(200).json({
       success: true,
@@ -111,13 +118,8 @@ const performCheckIn = async (req, res) => {
         expected_check_in: booking.check_in_date,
         actual_check_in: booking.actual_check_in,
         early_check_in: booking.early_check_in,
-        room_details: room
-          ? {
-              room_number: room.room_number,
-              floor: room.floor,
-              category_name: category?.category_name,
-            }
-          : null,
+        total_rooms: booking.total_rooms,
+        rooms: roomDetails,
         total_amount: booking.total_amount,
         extra_charges: booking.extra_charges,
         grand_total: booking.total_amount + booking.extra_charges,
@@ -125,9 +127,8 @@ const performCheckIn = async (req, res) => {
       },
     });
 
-    // TODO: Send check-in confirmation email/SMS
     console.log(
-      `Check-in confirmation should be sent to: ${booking.customer_email}`,
+      `Check-in confirmation should be sent to: ${booking.customer_email}`
     );
   } catch (error) {
     console.error("Check-in error:", error);
@@ -167,7 +168,7 @@ const performCheckOut = async (req, res) => {
       });
     }
 
-    // Check booking status
+    // ❌ Status checks
     if (booking.booking_status === "cancelled") {
       return res.status(400).json({
         success: false,
@@ -178,68 +179,89 @@ const performCheckOut = async (req, res) => {
     if (booking.booking_status === "confirmed") {
       return res.status(400).json({
         success: false,
-        message: "Guest has not checked in yet. Please perform check-in first.",
+        message: "Guest has not checked in yet",
       });
     }
 
     if (booking.booking_status === "checked_out") {
       return res.status(400).json({
         success: false,
-        message: "Guest has already checked out",
+        message: "Guest already checked out",
         actual_check_out: booking.actual_check_out,
       });
     }
 
-    // Record actual check-out time
+    // ✅ Perform checkout
     const now = new Date();
     booking.actual_check_out = now;
     booking.booking_status = "checked_out";
     booking.checked_out_by = req.user._id.toString();
 
-    // Check if late check-out (after expected date)
+    // Late checkout detection (12 PM rule)
     const expectedCheckOut = new Date(booking.check_out_date);
-    expectedCheckOut.setHours(12, 0, 0, 0); // Assuming 12 PM checkout time
+    expectedCheckOut.setHours(12, 0, 0, 0);
 
     if (now > expectedCheckOut) {
       booking.late_check_out = true;
     }
 
-    // Update payment information
+    // Payment updates
     if (payment_status) booking.payment_status = payment_status;
-    if (final_payment_method) booking.payment_method = final_payment_method;
+    if (final_payment_method)
+      booking.payment_method = final_payment_method;
 
-    // Add any final extra charges
+    // Extra charges
     if (extra_charges) {
       booking.extra_charges += extra_charges;
-      const newChargeDesc =
+      const desc =
         extra_charges_description || "Additional checkout charges";
       booking.extra_charges_description = booking.extra_charges_description
-        ? `${booking.extra_charges_description}; ${newChargeDesc}`
-        : newChargeDesc;
+        ? `${booking.extra_charges_description}; ${desc}`
+        : desc;
     }
+
+    // Optional feedback storage (if fields exist later)
+    if (feedback_rating) booking.feedback_rating = feedback_rating;
+    if (feedback_comments)
+      booking.feedback_comments = feedback_comments;
 
     await booking.save();
 
-    // Update room status to available
-    const room = await Room.findById(booking.room_id);
-    if (room) {
-      room.status = "available";
-      await room.save();
-    }
+    // 🏨 Free ALL rooms
+    await Room.updateMany(
+      { _id: { $in: booking.room_ids } },
+      { $set: { status: "available" } }
+    );
 
-    // Calculate actual stay duration
+    // 🔍 Fetch room details
+    const rooms = await Room.find({ _id: { $in: booking.room_ids } });
+
+    const roomDetails = await Promise.all(
+      rooms.map(async (room) => {
+        const category = await RoomCategory.findById(room.category_id);
+        return {
+          room_id: room._id,
+          room_number: room.room_number,
+          floor: room.floor,
+          category_name: category?.category_name,
+        };
+      })
+    );
+
+    // 🧮 Calculate actual nights stayed
     const actualNights =
       booking.actual_check_in && booking.actual_check_out
-        ? Math.ceil(
+        ? Math.max(
+          1,
+          Math.ceil(
             (booking.actual_check_out - booking.actual_check_in) /
-              (1000 * 60 * 60 * 24),
+            (1000 * 60 * 60 * 24)
           )
-        : calculateNights(booking.check_in_date, booking.check_out_date);
-
-    // Get room details
-    const category = room
-      ? await RoomCategory.findById(room.category_id)
-      : null;
+        )
+        : calculateNights(
+          booking.check_in_date,
+          booking.check_out_date
+        );
 
     res.status(200).json({
       success: true,
@@ -248,31 +270,28 @@ const performCheckOut = async (req, res) => {
         booking_id: booking._id,
         booking_reference: booking.booking_reference,
         customer_name: booking.customer_name,
+        actual_check_in: booking.actual_check_in,
         expected_check_out: booking.check_out_date,
         actual_check_out: booking.actual_check_out,
         late_check_out: booking.late_check_out,
-        actual_check_in: booking.actual_check_in,
         actual_nights_stayed: actualNights,
-        room_details: room
-          ? {
-              room_number: room.room_number,
-              floor: room.floor,
-              category_name: category?.category_name,
-            }
-          : null,
+        total_rooms: booking.total_rooms,
+        rooms: roomDetails,
         billing: {
           room_charges: booking.total_amount,
           extra_charges: booking.extra_charges,
-          extra_charges_description: booking.extra_charges_description,
-          grand_total: booking.total_amount + booking.extra_charges,
+          extra_charges_description:
+            booking.extra_charges_description,
+          grand_total:
+            booking.total_amount + booking.extra_charges,
           payment_status: booking.payment_status,
+          payment_method: booking.payment_method,
         },
       },
     });
 
-    // TODO: Send checkout email with feedback request
     console.log(
-      `Checkout confirmation and feedback request should be sent to: ${booking.customer_email}`,
+      `Checkout confirmation & feedback request should be sent to: ${booking.customer_email}`
     );
   } catch (error) {
     console.error("Check-out error:", error);
@@ -307,18 +326,18 @@ const getCurrentlyCheckedIn = async (req, res) => {
         // Calculate how long they've been staying
         const stayDuration = booking.actual_check_in
           ? Math.floor(
-              (new Date() - booking.actual_check_in) / (1000 * 60 * 60 * 24),
-            )
+            (new Date() - booking.actual_check_in) / (1000 * 60 * 60 * 24),
+          )
           : 0;
 
         return {
           ...booking.toObject(),
           room_details: room
             ? {
-                room_number: room.room_number,
-                floor: room.floor,
-                category_name: category?.category_name,
-              }
+              room_number: room.room_number,
+              floor: room.floor,
+              category_name: category?.category_name,
+            }
             : null,
           stay_duration_days: stayDuration,
         };
@@ -449,7 +468,7 @@ const getBookingHistory = async (req, res) => {
     if (booking.actual_check_in && booking.actual_check_out) {
       actualDuration = Math.ceil(
         (booking.actual_check_out - booking.actual_check_in) /
-          (1000 * 60 * 60 * 24),
+        (1000 * 60 * 60 * 24),
       );
     }
 
@@ -458,10 +477,10 @@ const getBookingHistory = async (req, res) => {
       customer_name: booking.customer_name,
       room_details: room
         ? {
-            room_number: room.room_number,
-            floor: room.floor,
-            category_name: category?.category_name,
-          }
+          room_number: room.room_number,
+          floor: room.floor,
+          category_name: category?.category_name,
+        }
         : null,
 
       timeline: {
@@ -543,10 +562,10 @@ const getTodayCheckIns = async (req, res) => {
           ...booking.toObject(),
           room_details: room
             ? {
-                room_number: room.room_number,
-                floor: room.floor,
-                category_name: category?.category_name,
-              }
+              room_number: room.room_number,
+              floor: room.floor,
+              category_name: category?.category_name,
+            }
             : null,
           is_checked_in: booking.booking_status === "checked_in",
         };
@@ -600,10 +619,10 @@ const getTodayCheckOuts = async (req, res) => {
           ...booking.toObject(),
           room_details: room
             ? {
-                room_number: room.room_number,
-                floor: room.floor,
-                category_name: category?.category_name,
-              }
+              room_number: room.room_number,
+              floor: room.floor,
+              category_name: category?.category_name,
+            }
             : null,
           is_checked_out: booking.booking_status === "checked_out",
         };

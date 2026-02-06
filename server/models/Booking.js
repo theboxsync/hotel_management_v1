@@ -3,24 +3,31 @@ const Schema = mongoose.Schema;
 
 const BookingSchema = new Schema({
   hotel_id: { type: String, required: true },
-  room_id: { type: String, required: true },
+
+  // CHANGED: room_id → room_ids (array)
+  room_ids: [{ type: String, required: true }], // Multiple rooms
+
   customer_name: { type: String, required: true },
   customer_email: { type: String, required: true },
   customer_phone: { type: String, required: true },
 
-  // Expected dates (when booking is made)
+  // Expected dates
   check_in_date: { type: Date, required: true },
   check_out_date: { type: Date, required: true },
 
-  // Actual check-in/check-out times (when guest arrives/leaves)
+  // Actual check-in/out times
   actual_check_in: { type: Date },
   actual_check_out: { type: Date },
 
   // Check-in/out performed by
-  checked_in_by: { type: String }, // Staff/Admin ID
-  checked_out_by: { type: String }, // Staff/Admin ID
+  checked_in_by: { type: String },
+  checked_out_by: { type: String },
 
   guests_count: { type: Number, required: true },
+
+  // NEW: Track number of rooms
+  total_rooms: { type: Number, required: true, default: 1 },
+
   total_amount: { type: Number, required: true },
   booking_status: {
     type: String,
@@ -45,9 +52,18 @@ const BookingSchema = new Schema({
   discount_amount: { type: Number, default: 0 },
   coupon_code: { type: String },
   booking_reference: { type: String, unique: true },
-  parent_booking_reference: { type: String }, 
-  is_group_booking: { type: Boolean, default: false },
-  group_booking_id: { type: String }, 
+
+  // NEW: Room breakdown for multi-room bookings
+  room_breakdown: [
+    {
+      room_id: { type: String, required: true },
+      room_number: { type: String },
+      guests_in_room: { type: Number },
+      price_per_night: { type: Number },
+      nights: { type: Number },
+      subtotal: { type: Number },
+    }
+  ],
 
   // Additional tracking
   early_check_in: { type: Boolean, default: false },
@@ -59,15 +75,13 @@ const BookingSchema = new Schema({
   updated_at: { type: Date, default: Date.now },
 });
 
-// Create index for efficient queries
+// Indexes
 BookingSchema.index({ hotel_id: 1, check_in_date: 1, check_out_date: 1 });
 BookingSchema.index({ booking_reference: 1 });
 BookingSchema.index({ customer_email: 1 });
+BookingSchema.index({ room_ids: 1 }); // NEW: Index for room_ids array
 
-BookingSchema.index({ parent_booking_reference: 1 });
-BookingSchema.index({ is_group_booking: 1 });
-
-// Update timestamp on save
+// Update timestamp
 BookingSchema.pre("save", async function () {
   this.updated_at = new Date();
   return;

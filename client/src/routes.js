@@ -2,9 +2,6 @@
 import { lazy } from 'react';
 import { DEFAULT_PATHS } from 'config.js';
 import withOperationsLayout from 'views/pages/operation/withOperationsLayout';
-import AddEditRoomCategory from 'views/pages/operation/Room/AddEditRoomCategory';
-import AddEditRoom from 'views/pages/operation/Room/AddEditRoom';
-import BookingDetails from 'views/pages/operation/booking/BookingDetails';
 
 const qsr = {
   dashboard: lazy(() => import('views/pages/Dashboard')),
@@ -45,7 +42,7 @@ const allRoutes = {
       component: qsr.operation,
       subs: [
         {
-          path: '/booking/:id',
+          path: '/bookings/:id',
           label: 'Booking Details',
           hideSub: true,
           component: operation.bookingDetails,

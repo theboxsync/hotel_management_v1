@@ -177,7 +177,7 @@ const BookingDetails = () => {
                 <Row className="align-items-center">
                     <Col xs="12" md="7">
                         <h1 className="mb-0 pb-0 display-4">
-                            Booking: {booking.booking_reference}
+                            Booking: {booking.booking.booking_reference}
                         </h1>
                         <BreadcrumbList items={breadcrumbs} />
                     </Col>
@@ -379,10 +379,10 @@ const BookingDetails = () => {
                         <Card.Body>
                             <div className="mb-4">
                                 <div className="text-muted text-small">Check-In Date</div>
-                                <div className="font-weight-bold h5">{formatDate(booking.check_in_date)}</div>
-                                {booking.actual_check_in && (
+                                <div className="font-weight-bold h5">{formatDate(booking.booking.check_in_date)}</div>
+                                {booking.booking.actual_check_in && (
                                     <div className="text-muted text-small">
-                                        Actual: {formatDateTime(booking.actual_check_in)}
+                                        Actual: {formatDateTime(booking.booking.actual_check_in)}
                                     </div>
                                 )}
                             </div>
