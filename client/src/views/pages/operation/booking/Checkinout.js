@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import HtmlHead from 'components/html-head/HtmlHead';
 import BreadcrumbList from 'components/breadcrumb-list/BreadcrumbList';
 import CsLineIcons from 'cs-line-icons/CsLineIcons';
+import PaymentTracker from './PaymentTracker';
 
 const CheckInOut = () => {
   const location = useLocation();
@@ -22,19 +23,20 @@ const CheckInOut = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState(''); // 'checkin' or 'checkout'
 
+  // Payment Tracker state
+  const [showPaymentTracker, setShowPaymentTracker] = useState(false);
+  const [paymentBookingId, setPaymentBookingId] = useState(null);
+  const [paymentBookingRef, setPaymentBookingRef] = useState('');
+
   const [checkInData, setCheckInData] = useState({
-    payment_method: '',
-    payment_status: 'pending',
     extra_charges: 0,
     extra_charges_description: '',
     notes: '',
   });
 
   const [checkOutData, setCheckOutData] = useState({
-    payment_status: 'pending',
     extra_charges: 0,
     extra_charges_description: '',
-    final_payment_method: '',
   });
 
   const title = 'Check-In/Check-Out';
@@ -90,8 +92,6 @@ const CheckInOut = () => {
     setSelectedBooking(booking);
     setModalType('checkin');
     setCheckInData({
-      payment_method: '',
-      payment_status: 'pending',
       extra_charges: 0,
       extra_charges_description: '',
       notes: '',
@@ -103,12 +103,20 @@ const CheckInOut = () => {
     setSelectedBooking(booking);
     setModalType('checkout');
     setCheckOutData({
-      payment_status: booking.payment_status || 'pending',
       extra_charges: 0,
       extra_charges_description: '',
-      final_payment_method: booking.payment_method || '',
     });
     setShowModal(true);
+  };
+
+  const handleManagePayments = (booking) => {
+    setPaymentBookingId(booking._id);
+    setPaymentBookingRef(booking.booking_reference);
+    setShowPaymentTracker(true);
+  };
+
+  const handlePaymentAdded = () => {
+    fetchData(); // Refresh the data to show updated payment status
   };
 
   const handleCheckIn = async (e) => {
@@ -188,6 +196,16 @@ const CheckInOut = () => {
             <BreadcrumbList items={breadcrumbs} />
           </div>
 
+          {/* Info Alert */}
+          <Alert variant="info" className="mb-4">
+            <Row className="align-items-center">
+              <Col>
+                <CsLineIcons icon="info" className="me-2" />
+                <strong>Quick Tip:</strong> Click "Manage Payments" on any booking card to add payments directly from this page!
+              </Col>
+            </Row>
+          </Alert>
+
           <Row className="g-4">
             {/* Today's Check-Ins */}
             <Col lg={4}>
@@ -240,9 +258,44 @@ const CheckInOut = () => {
                                   <CsLineIcons icon="phone" className="me-1" size="12" />
                                   {booking.customer_phone}
                                 </small>
+
+                                {/* Payment Status */}
+                                <div className="mt-2 p-2 bg-light rounded">
+                                  <div className="d-flex justify-content-between align-items-center mb-1">
+                                    <Badge
+                                      bg={
+                                        booking.payment_status === 'paid' ? 'success' :
+                                          booking.payment_status === 'partial' ? 'warning' :
+                                            'secondary'
+                                      }
+                                      className="text-uppercase"
+                                    >
+                                      {booking.payment_status}
+                                    </Badge>
+                                    {booking.pending_amount > 0 && (
+                                      <small className="text-danger fw-bold">
+                                        Due: {process.env.REACT_APP_CURRENCY} {booking.pending_amount}
+                                      </small>
+                                    )}
+                                  </div>
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    className="w-100 mt-1"
+                                    onClick={() => handleManagePayments(booking)}
+                                  >
+                                    <CsLineIcons icon="credit-card" className="me-1" size="12" />
+                                    Manage Payments
+                                  </Button>
+                                </div>
                               </div>
                               {!booking.is_checked_in && (
-                                <Button variant="primary" size="sm" className="w-100" onClick={() => handleCheckInClick(booking)}>
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  className="w-100 mt-2"
+                                  onClick={() => handleCheckInClick(booking)}
+                                >
                                   <CsLineIcons icon="log-in" className="me-1" />
                                   Check-In
                                 </Button>
@@ -301,11 +354,46 @@ const CheckInOut = () => {
                                   Room {booking.room_details?.room_number}
                                 </small>
                                 <small className="text-muted d-block">
-                                 {process.env.REACT_APP_CURRENCY} {booking.total_amount}
+                                  Total: {process.env.REACT_APP_CURRENCY} {booking.total_amount}
                                 </small>
+
+                                {/* Payment Status */}
+                                <div className="mt-2 p-2 bg-light rounded">
+                                  <div className="d-flex justify-content-between align-items-center mb-1">
+                                    <Badge
+                                      bg={
+                                        booking.payment_status === 'paid' ? 'success' :
+                                          booking.payment_status === 'partial' ? 'warning' :
+                                            'secondary'
+                                      }
+                                      className="text-uppercase"
+                                    >
+                                      {booking.payment_status}
+                                    </Badge>
+                                    {booking.pending_amount > 0 && (
+                                      <small className="text-danger fw-bold">
+                                        Due: {process.env.REACT_APP_CURRENCY} {booking.pending_amount}
+                                      </small>
+                                    )}
+                                  </div>
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    className="w-100 mt-1"
+                                    onClick={() => handleManagePayments(booking)}
+                                  >
+                                    <CsLineIcons icon="credit-card" className="me-1" size="12" />
+                                    Manage Payments
+                                  </Button>
+                                </div>
                               </div>
                               {!booking.is_checked_out && booking.booking_status === 'checked_in' && (
-                                <Button variant="primary" size="sm" className="w-100" onClick={() => handleCheckOutClick(booking)}>
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  className="w-100 mt-2"
+                                  onClick={() => handleCheckOutClick(booking)}
+                                >
                                   <CsLineIcons icon="log-out" className="me-1" />
                                   Check-Out
                                 </Button>
@@ -363,8 +451,43 @@ const CheckInOut = () => {
                                   <CsLineIcons icon="calendar" className="me-1" size="12" />
                                   Check-out: {formatDate(booking.check_out_date)}
                                 </small>
+
+                                {/* Payment Status */}
+                                <div className="mt-2 p-2 bg-light rounded">
+                                  <div className="d-flex justify-content-between align-items-center mb-1">
+                                    <Badge
+                                      bg={
+                                        booking.payment_status === 'paid' ? 'success' :
+                                          booking.payment_status === 'partial' ? 'warning' :
+                                            'secondary'
+                                      }
+                                      className="text-uppercase"
+                                    >
+                                      {booking.payment_status}
+                                    </Badge>
+                                    {booking.pending_amount > 0 && (
+                                      <small className="text-danger fw-bold">
+                                        Due: {process.env.REACT_APP_CURRENCY} {booking.pending_amount}
+                                      </small>
+                                    )}
+                                  </div>
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    className="w-100 mt-1"
+                                    onClick={() => handleManagePayments(booking)}
+                                  >
+                                    <CsLineIcons icon="credit-card" className="me-1" size="12" />
+                                    Manage Payments
+                                  </Button>
+                                </div>
                               </div>
-                              <Button variant="outline-primary" size="sm" className="w-100" onClick={() => handleCheckOutClick(booking)}>
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                className="w-100 mt-2"
+                                onClick={() => handleCheckOutClick(booking)}
+                              >
                                 <CsLineIcons icon="log-out" className="me-1" />
                                 Early Check-Out
                               </Button>
@@ -404,46 +527,39 @@ const CheckInOut = () => {
                         <small className="text-muted">{selectedBooking.booking_reference}</small>
                       </div>
                     </div>
-                    <div className="d-flex">
-                      <div className="me-4">
+                    <Row>
+                      <Col xs={4}>
                         <small className="text-muted d-block">Room</small>
-                        <div className="font-weight-bold">{selectedBooking.room_number || 'N/A'}</div>
-                      </div>
-                      <div>
+                        <div className="fw-bold">{selectedBooking.room_number || 'N/A'}</div>
+                      </Col>
+                      <Col xs={4}>
                         <small className="text-muted d-block">Guests</small>
-                        <div className="font-weight-bold">{selectedBooking.guests_count}</div>
-                      </div>
-                    </div>
+                        <div className="fw-bold">{selectedBooking.guests_count}</div>
+                      </Col>
+                      <Col xs={4}>
+                        <small className="text-muted d-block">Payment</small>
+                        <Badge
+                          bg={
+                            selectedBooking.payment_status === 'paid' ? 'success' :
+                              selectedBooking.payment_status === 'partial' ? 'warning' :
+                                'secondary'
+                          }
+                        >
+                          {selectedBooking.payment_status}
+                        </Badge>
+                      </Col>
+                    </Row>
                   </Card.Body>
                 </Card>
 
+                <Alert variant="success" className="mb-3">
+                  <CsLineIcons icon="check-circle" className="me-2" />
+                  <small>
+                    <strong>Tip:</strong> Click "Manage Payments" button on the booking card to add payments!
+                  </small>
+                </Alert>
+
                 <Row className="g-3">
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label>Payment Method</Form.Label>
-                      <Form.Select
-                        value={checkInData.payment_method}
-                        onChange={(e) => setCheckInData({ ...checkInData, payment_method: e.target.value })}
-                        required
-                      >
-                        <option value="">Select payment method</option>
-                        <option value="cash">Cash</option>
-                        <option value="card">Card</option>
-                        <option value="upi">UPI</option>
-                        <option value="online">Online</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label>Payment Status</Form.Label>
-                      <Form.Select value={checkInData.payment_status} onChange={(e) => setCheckInData({ ...checkInData, payment_status: e.target.value })}>
-                        <option value="pending">Pending</option>
-                        <option value="paid">Paid</option>
-                        <option value="partial">Partial</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
                   <Col md={6}>
                     <Form.Group>
                       <Form.Label>Extra Charges ({process.env.REACT_APP_CURRENCY})</Form.Label>
@@ -523,15 +639,31 @@ const CheckInOut = () => {
                     <div className="border rounded p-3 mb-3">
                       <div className="d-flex justify-content-between mb-2">
                         <span>Room Charges:</span>
-                        <span className="font-weight-bold">
-                          {process.env.REACT_APP_CURRENCY}  {selectedBooking.total_amount}
+                        <span className="fw-bold">
+                          {process.env.REACT_APP_CURRENCY} {selectedBooking.total_amount}
                         </span>
                       </div>
                       {selectedBooking.extra_charges > 0 && (
                         <div className="d-flex justify-content-between mb-2">
                           <span>Existing Extra Charges:</span>
-                          <span className="font-weight-bold">
-                            {process.env.REACT_APP_CURRENCY}  {selectedBooking.extra_charges}
+                          <span className="fw-bold">
+                            {process.env.REACT_APP_CURRENCY} {selectedBooking.extra_charges}
+                          </span>
+                        </div>
+                      )}
+                      {selectedBooking.paid_amount > 0 && (
+                        <div className="d-flex justify-content-between mb-2 text-success">
+                          <span>Paid Amount:</span>
+                          <span className="fw-bold">
+                            {process.env.REACT_APP_CURRENCY} {selectedBooking.paid_amount}
+                          </span>
+                        </div>
+                      )}
+                      {selectedBooking.pending_amount > 0 && (
+                        <div className="d-flex justify-content-between text-danger">
+                          <span>Pending Amount:</span>
+                          <span className="fw-bold">
+                            {process.env.REACT_APP_CURRENCY} {selectedBooking.pending_amount}
                           </span>
                         </div>
                       )}
@@ -539,10 +671,19 @@ const CheckInOut = () => {
                   </Card.Body>
                 </Card>
 
+                {selectedBooking.pending_amount > 0 && (
+                  <Alert variant="warning" className="mb-3">
+                    <CsLineIcons icon="alert-circle" className="me-2" />
+                    <small>
+                      <strong>Pending Payment!</strong> Click "Manage Payments" on the booking card to collect payment before check-out.
+                    </small>
+                  </Alert>
+                )}
+
                 <Row className="g-3">
                   <Col md={6}>
                     <Form.Group>
-                      <Form.Label>Additional Extra Charges ({process.env.REACT_APP_CURRENCY} )</Form.Label>
+                      <Form.Label>Additional Extra Charges ({process.env.REACT_APP_CURRENCY})</Form.Label>
                       <Form.Control
                         type="number"
                         value={checkOutData.extra_charges}
@@ -565,39 +706,14 @@ const CheckInOut = () => {
                       </Form.Group>
                     </Col>
                   )}
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label>Final Payment Method</Form.Label>
-                      <Form.Select
-                        value={checkOutData.final_payment_method}
-                        onChange={(e) => setCheckOutData({ ...checkOutData, final_payment_method: e.target.value })}
-                      >
-                        <option value="">Select payment method</option>
-                        <option value="cash">Cash</option>
-                        <option value="card">Card</option>
-                        <option value="upi">UPI</option>
-                        <option value="online">Online</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label>Payment Status</Form.Label>
-                      <Form.Select value={checkOutData.payment_status} onChange={(e) => setCheckOutData({ ...checkOutData, payment_status: e.target.value })}>
-                        <option value="pending">Pending</option>
-                        <option value="paid">Paid</option>
-                        <option value="partial">Partial</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
                 </Row>
 
                 <Card className="mt-4 border-primary">
                   <Card.Body>
                     <div className="d-flex justify-content-between align-items-center">
-                      <h6 className="mb-0">Total Bill:</h6>
+                      <h6 className="mb-0">Final Bill:</h6>
                       <h5 className="mb-0 text-primary">
-                        {process.env.REACT_APP_CURRENCY} 
+                        {process.env.REACT_APP_CURRENCY}
                         {(
                           parseFloat(selectedBooking.total_amount) +
                           parseFloat(selectedBooking.extra_charges || 0) +
@@ -621,6 +737,15 @@ const CheckInOut = () => {
           </Modal.Footer>
         </Form>
       </Modal>
+
+      {/* Payment Tracker Modal */}
+      <PaymentTracker
+        show={showPaymentTracker}
+        onHide={() => setShowPaymentTracker(false)}
+        bookingId={paymentBookingId}
+        bookingReference={paymentBookingRef}
+        onPaymentAdded={handlePaymentAdded}
+      />
     </>
   );
 };

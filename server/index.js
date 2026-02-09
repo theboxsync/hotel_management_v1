@@ -8,6 +8,7 @@ const connectDB = require("./utils/db");
 const AuthRouter = require("./routes/Authroutes");
 const RoomRouter = require("./routes/Roomroutes");
 const BookingRouter = require("./routes/Bookingroutes");
+const PaymentRouter = require("./routes/Paymentroutes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,6 +38,7 @@ app.get("/health", (req, res) => {
 app.use("/api/auth", AuthRouter);
 app.use("/api/rooms", RoomRouter);
 app.use("/api/bookings", BookingRouter);
+app.use("/api/payments", PaymentRouter);
 
 // ============================================
 // ERROR HANDLING

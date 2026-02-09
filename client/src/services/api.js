@@ -89,4 +89,13 @@ export const bookingAPI = {
   getUpcomingCheckOuts: (days) => api.get('/bookings/upcoming-checkouts', { params: { days } }),
 };
 
+export const paymentAPI = {
+  addPayment: (data) => api.post('/payments', data),
+  getBookingPayments: (bookingId) => api.get(`/payments/booking/${bookingId}`),
+  getAllPayments: (params) => api.get('/payments', { params }),
+  refundPayment: (paymentId, data) => api.put(`/payments/${paymentId}/refund`, data),
+  deletePayment: (paymentId) => api.delete(`/payments/${paymentId}`),
+};
+
+
 export default api;

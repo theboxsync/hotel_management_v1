@@ -91,7 +91,7 @@ const calculateTotalAmount = (pricePerNight, nights, discountAmount = 0) => {
 /**
  * Validate booking dates
  */
-const validateBookingDates = (checkInDate, checkOutDate) => {
+const validateBookingDates = (checkInDate, checkOutDate, booking_status = null) => {
   const checkIn = new Date(checkInDate);
   const checkOut = new Date(checkOutDate);
   const today = new Date();
@@ -100,7 +100,7 @@ const validateBookingDates = (checkInDate, checkOutDate) => {
   const errors = [];
 
   // Check if check-in is in the past
-  if (checkIn < today) {
+  if (checkIn < today && booking_status !== 'checked_in') {
     errors.push("Check-in date cannot be in the past");
   }
 

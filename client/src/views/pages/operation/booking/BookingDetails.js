@@ -1,31 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useHistory, Link } from 'react-router-dom';
-import { Card, Row, Col, Button, Badge, Alert, Spinner, Table, Modal, Form } from 'react-bootstrap';
+import { useHistory, useParams } from 'react-router-dom';
+import { Card, Row, Col, Button, Badge, Table, Spinner, Alert } from 'react-bootstrap';
 import { bookingAPI } from 'services/api';
 import { toast } from 'react-toastify';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import HtmlHead from 'components/html-head/HtmlHead';
 import BreadcrumbList from 'components/breadcrumb-list/BreadcrumbList';
 import CsLineIcons from 'cs-line-icons/CsLineIcons';
+import PaymentTracker from './PaymentTracker';
 
 const BookingDetails = () => {
     const { id } = useParams();
     const history = useHistory();
     const [booking, setBooking] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [showCancelModal, setShowCancelModal] = useState(false);
-    const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-    const [invoiceData, setInvoiceData] = useState(null);
-    const [generatingInvoice, setGeneratingInvoice] = useState(false);
+    const [showPaymentTracker, setShowPaymentTracker] = useState(false);
 
     const title = 'Booking Details';
-    const description = 'View detailed information about a booking';
+    const description = 'View booking information';
 
     const breadcrumbs = [
         { to: '/operations', text: 'Operations' },
-        { to: '/operations/bookings', text: 'All Bookings' },
-        { to: `/operations/bookings/${id}`, text: 'Booking Details' },
+        { to: '/operations/bookings', text: 'Bookings' },
+        { to: '', text: 'Details' },
     ];
+
 
     const fetchBookingDetails = async () => {
         setLoading(true);
@@ -42,16 +41,29 @@ const BookingDetails = () => {
     };
 
     useEffect(() => {
-        if (id) {
-            fetchBookingDetails();
-        }
+        fetchBookingDetails();
     }, [id]);
 
-    const handleCancelBooking = async () => {
+    const handleEdit = () => {
+        history.push(`/operations/bookings/edit/${id}`);
+    };
+
+    const handleCheckIn = () => {
+        history.push(`/operations/check-in-out?booking=${id}&action=checkin`);
+    };
+
+    const handleCheckOut = () => {
+        history.push(`/operations/check-in-out?booking=${id}&action=checkout`);
+    };
+
+    const handleCancel = async () => {
+        if (!window.confirm('Are you sure you want to cancel this booking?')) {
+            return;
+        }
+
         try {
             await bookingAPI.cancel(id);
             toast.success('Booking cancelled successfully');
-            setShowCancelModal(false);
             fetchBookingDetails();
         } catch (error) {
             console.error('Error cancelling booking:', error);
@@ -59,579 +71,524 @@ const BookingDetails = () => {
         }
     };
 
-    const handleCheckIn = () => {
-        history.push(`/operations/bookings/${id}/check-in`);
+    const handleBack = () => {
+        history.push('/operations/bookings');
     };
 
-    const handleCheckOut = () => {
-        history.push(`/operations/bookings/${id}/check-out`);
-    };
-
-    // const handleGenerateInvoice = async () => {
-    //     setGeneratingInvoice(true);
-    //     try {
-    //         const response = await invoiceAPI.generate(id);
-    //         setInvoiceData(response.data.data);
-    //         setShowInvoiceModal(true);
-    //     } catch (error) {
-    //         console.error('Error generating invoice:', error);
-    //         toast.error('Failed to generate invoice');
-    //     } finally {
-    //         setGeneratingInvoice(false);
-    //     }
-    // };
-
-    // const handleDownloadInvoice = async () => {
-    //     try {
-    //         const response = await invoiceAPI.download(id);
-    //         const url = window.URL.createObjectURL(new Blob([response.data]));
-    //         const link = document.createElement('a');
-    //         link.href = url;
-    //         link.setAttribute('download', `Invoice_${booking?.booking_reference}.pdf`);
-    //         document.body.appendChild(link);
-    //         link.click();
-    //         link.remove();
-    //     } catch (error) {
-    //         console.error('Error downloading invoice:', error);
-    //         toast.error('Failed to download invoice');
-    //     }
-    // };
-
-    const formatDate = (date) => {
-        if (!date) return 'N/A';
-        return format(parseISO(date), 'MMM dd, yyyy');
-    };
-
-    const formatDateTime = (date) => {
-        if (!date) return 'N/A';
-        return format(parseISO(date), 'MMM dd, yyyy hh:mm a');
+    const handlePaymentAdded = () => {
+        fetchBookingDetails(); // Refresh booking data after payment
     };
 
     const getStatusBadge = (status) => {
-        const badges = {
-            confirmed: { bg: 'success', text: 'Confirmed', icon: 'check' },
+        const badgeProps = {
+            confirmed: { bg: 'success', text: 'Confirmed', icon: 'check-circle' },
             checked_in: { bg: 'primary', text: 'Checked In', icon: 'log-in' },
             checked_out: { bg: 'info', text: 'Checked Out', icon: 'log-out' },
             cancelled: { bg: 'danger', text: 'Cancelled', icon: 'x-circle' },
-            no_show: { bg: 'warning', text: 'No Show', icon: 'user-x' },
+            no_show: { bg: 'warning', text: 'No Show', icon: 'alert-circle' },
         };
-        const badge = badges[status] || { bg: 'secondary', text: status, icon: 'help-circle' };
+        const { bg = 'secondary', text = status, icon = 'info' } = badgeProps[status] || {};
         return (
-            <Badge bg={badge.bg} className="d-flex align-items-center gap-1" style={{ width: 'fit-content' }}>
-                <CsLineIcons icon={badge.icon} size="12" />
-                {badge.text}
+            <Badge bg={bg} className="p-2">
+                <CsLineIcons icon={icon} className="me-1" size="14" />
+                {text}
             </Badge>
         );
     };
 
     const getPaymentBadge = (status) => {
-        const badges = {
+        const badgeProps = {
             pending: { bg: 'warning', text: 'Pending', icon: 'clock' },
-            paid: { bg: 'success', text: 'Paid', icon: 'check-circle' },
-            refunded: { bg: 'info', text: 'Refunded', icon: 'refresh-cw' },
-            partial: { bg: 'primary', text: 'Partial', icon: 'dollar-sign' },
+            paid: { bg: 'success', text: 'Paid', icon: 'check' },
+            refunded: { bg: 'info', text: 'Refunded', icon: 'rotate-ccw' },
+            partial: { bg: 'primary', text: 'Partial', icon: 'credit-card' },
         };
-        const badge = badges[status] || { bg: 'secondary', text: status, icon: 'help-circle' };
+        const { bg = 'secondary', text = status, icon = 'credit-card' } = badgeProps[status] || {};
         return (
-            <Badge bg={badge.bg} className="d-flex align-items-center gap-1" style={{ width: 'fit-content' }}>
-                <CsLineIcons icon={badge.icon} size="12" />
-                {badge.text}
+            <Badge bg={bg} className="p-2">
+                <CsLineIcons icon={icon} className="me-1" size="14" />
+                {text}
             </Badge>
         );
+    };
+
+    const formatDate = (date) => {
+        return format(new Date(date), 'MMM dd, yyyy');
+    };
+
+    const formatDateTime = (date) => {
+        return format(new Date(date), 'MMM dd, yyyy hh:mm a');
     };
 
     if (loading) {
         return (
             <>
                 <HtmlHead title={title} description={description} />
-                <Row>
-                    <Col>
-                        <div className="page-title-container mb-4">
-                            <h1 className="mb-0 pb-0 display-4">{title}</h1>
-                            <BreadcrumbList items={breadcrumbs} />
-                        </div>
-                        <div className="text-center py-5">
-                            <Spinner animation="border" variant="primary" className="mb-3" />
-                            <p>Loading booking details...</p>
-                        </div>
-                    </Col>
-                </Row>
+                <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+                    <Spinner animation="border" variant="primary" />
+                </div>
             </>
         );
     }
 
     if (!booking) {
         return (
-            <Alert variant="danger">
-                <CsLineIcons icon="alert-circle" className="me-2" />
-                Booking not found
-            </Alert>
+            <>
+                <HtmlHead title={title} description={description} />
+                <Alert variant="danger">Booking not found</Alert>
+            </>
         );
     }
+
+    const finalAmount = booking.booking.total_amount + (booking.booking.extra_charges || 0);
 
     return (
         <>
             <HtmlHead title={title} description={description} />
-
-            <div className="page-title-container mb-4">
-                <Row className="align-items-center">
-                    <Col xs="12" md="7">
-                        <h1 className="mb-0 pb-0 display-4">
-                            Booking: {booking.booking.booking_reference}
-                        </h1>
-                        <BreadcrumbList items={breadcrumbs} />
-                    </Col>
-                    <Col xs="12" md="5" className="text-end">
-                        <div className="d-flex gap-2 justify-content-end">
-                            <Button variant="outline-secondary" as={Link} to="/operations/bookings">
-                                <CsLineIcons icon="arrow-left" className="me-2" />
-                                Back to Bookings
-                            </Button>
-
-                            {booking.booking_status === 'confirmed' && (
-                                <>
-                                    <Button variant="primary" onClick={handleCheckIn}>
-                                        <CsLineIcons icon="log-in" className="me-2" />
-                                        Check In
-                                    </Button>
-                                    <Button variant="outline-danger" onClick={() => setShowCancelModal(true)}>
-                                        <CsLineIcons icon="x-circle" className="me-2" />
-                                        Cancel
-                                    </Button>
-                                </>
-                            )}
-
-                            {booking.booking_status === 'checked_in' && (
-                                <Button variant="primary" onClick={handleCheckOut}>
-                                    <CsLineIcons icon="log-out" className="me-2" />
-                                    Check Out
+            <Row>
+                <Col>
+                    <div className="page-title-container mb-4">
+                        <Row className="align-items-center">
+                            <Col xs="12" md="7">
+                                <h1 className="mb-0 pb-0 display-4">{title}</h1>
+                                <BreadcrumbList items={breadcrumbs} />
+                            </Col>
+                            <Col xs="12" md="5" className="text-end">
+                                <Button variant="outline-secondary" onClick={handleBack} className="me-2">
+                                    <CsLineIcons icon="arrow-left" className="me-2" />
+                                    Back to Bookings
                                 </Button>
-                            )}
-
-                            {/* <Button variant="success" onClick={handleGenerateInvoice} disabled={generatingInvoice}>
-                                {generatingInvoice ? (
-                                    <>
-                                        <Spinner as="span" animation="border" size="sm" className="me-2" />
-                                        Generating...
-                                    </>
-                                ) : (
-                                    <>
-                                        <CsLineIcons icon="file-text" className="me-2" />
-                                        Invoice
-                                    </>
+                                {['confirmed', 'checked_in'].includes(booking.booking.booking_status) && (
+                                    <Button variant="primary" onClick={handleEdit}>
+                                        <CsLineIcons icon="edit" className="me-2" />
+                                        Edit Booking
+                                    </Button>
                                 )}
-                            </Button> */}
-                        </div>
-                    </Col>
-                </Row>
-            </div>
+                            </Col>
+                        </Row>
+                    </div>
 
-            {/* Status Bar */}
-            <Card className="mb-4">
-                <Card.Body>
-                    <Row className="g-3 align-items-center">
-                        <Col md={3}>
-                            <div className="d-flex align-items-center">
-                                <div className="me-3">
-                                    {getStatusBadge(booking.booking_status)}
-                                </div>
-                                <div>
-                                    <div className="text-muted text-small">Status</div>
-                                    <div className="font-weight-bold">{booking.booking_status?.replace('_', ' ').toUpperCase()}</div>
-                                </div>
-                            </div>
-                        </Col>
-                        <Col md={3}>
-                            <div>
-                                <div className="text-muted text-small">Payment Status</div>
-                                <div className="d-flex align-items-center gap-2">
-                                    {getPaymentBadge(booking.payment_status)}
-                                    {booking.payment_method && (
-                                        <Badge bg="secondary">{booking.payment_method}</Badge>
-                                    )}
-                                </div>
-                            </div>
-                        </Col>
-                        <Col md={3}>
-                            <div>
-                                <div className="text-muted text-small">Booking Source</div>
-                                <div className="font-weight-bold">{booking.booking_source?.replace('_', ' ')}</div>
-                            </div>
-                        </Col>
-                        <Col md={3}>
-                            <div>
-                                <div className="text-muted text-small">Created On</div>
-                                <div className="font-weight-bold">{formatDateTime(booking.created_at)}</div>
-                            </div>
-                        </Col>
-                    </Row>
-                </Card.Body>
-            </Card>
+                    <Row>
+                        <Col xl={8} lg={10} className="mx-auto">
+                            {/* Header Info */}
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Row className="g-3 align-items-center">
+                                        <Col md={6}>
+                                            <div className="mb-2">
+                                                <small className="text-muted d-block">Booking Reference</small>
+                                                <h3 className="mb-0 text-primary">{booking.booking.booking_reference}</h3>
+                                            </div>
+                                            <div>
+                                                <small className="text-muted d-block">Booking Source</small>
+                                                <div className="text-capitalize">{booking.booking.booking_source}</div>
+                                            </div>
+                                        </Col>
+                                        <Col md={6} className="text-md-end">
+                                            <div className="mb-2">
+                                                <small className="text-muted d-block">Booking Status</small>
+                                                <div>{getStatusBadge(booking.booking.booking_status)}</div>
+                                            </div>
+                                            <div>
+                                                <small className="text-muted d-block">Payment Status</small>
+                                                <div>{getPaymentBadge(booking.booking.payment_status)}</div>
+                                            </div>
+                                        </Col>
+                                    </Row>
+                                </Card.Body>
+                            </Card>
 
-            <Row className="g-4">
-                {/* Guest Information */}
-                <Col lg={4}>
-                    <Card className="h-100">
-                        <Card.Header>
-                            <h5 className="mb-0">Guest Information</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            <div className="mb-3">
-                                <div className="text-muted text-small">Full Name</div>
-                                <div className="font-weight-bold h5">{booking.customer_name}</div>
-                            </div>
-
-                            <div className="mb-3">
-                                <div className="text-muted text-small">Email Address</div>
-                                <div>{booking.customer_email}</div>
-                            </div>
-
-                            <div className="mb-3">
-                                <div className="text-muted text-small">Phone Number</div>
-                                <div>{booking.customer_phone}</div>
-                            </div>
-
-                            <div className="mb-3">
-                                <div className="text-muted text-small">Number of Guests</div>
-                                <div className="font-weight-bold">{booking.guests_count}</div>
-                            </div>
-
-                            {booking.special_requests && (
-                                <div>
-                                    <div className="text-muted text-small">Special Requests</div>
-                                    <div className="border rounded p-3 bg-light mt-1">
-                                        {booking.special_requests}
+                            {/* Payment Status Alert */}
+                            {booking.booking.pending_amount > 0 && (
+                                <Alert variant="warning" className="mb-4">
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <CsLineIcons icon="alert-circle" className="me-2" />
+                                            <strong>Pending Payment:</strong> {process.env.REACT_APP_CURRENCY} {booking.booking.pending_amount} remaining
+                                        </div>
+                                        <Button
+                                            variant="warning"
+                                            size="sm"
+                                            onClick={() => setShowPaymentTracker(true)}
+                                        >
+                                            <CsLineIcons icon="credit-card" className="me-2" />
+                                            Add Payment
+                                        </Button>
                                     </div>
-                                </div>
+                                </Alert>
                             )}
-                        </Card.Body>
-                    </Card>
-                </Col>
 
-                {/* Room Information */}
-                <Col lg={4}>
-                    <Card className="h-100">
-                        <Card.Header>
-                            <h5 className="mb-0">Room Information</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            {booking.is_group_booking ? (
-                                <>
-                                    <div className="mb-3">
-                                        <Badge bg="info" className="mb-2">Group Booking</Badge>
-                                        <div className="text-muted text-small">Total Rooms</div>
-                                        <div className="font-weight-bold">{booking.room_details?.length || 1}</div>
-                                    </div>
-
-                                    <div className="mb-3">
-                                        <div className="text-muted text-small">Selected Rooms</div>
-                                        <div className="font-weight-bold">
-                                            {booking.room_details?.map(r => r.room_number).join(', ')}
+                            {/* Quick Payment Summary */}
+                            <Card className="mb-4 border-primary">
+                                <Card.Header className="bg-primary text-white d-flex justify-content-between align-items-center">
+                                    <h6 className="mb-0">
+                                        <CsLineIcons icon="credit-card" className="me-2" />
+                                        Payment Summary
+                                    </h6>
+                                    <Button
+                                        variant="light"
+                                        size="sm"
+                                        onClick={() => setShowPaymentTracker(true)}
+                                    >
+                                        <CsLineIcons icon="clock" className="me-2" />
+                                        View Full History
+                                    </Button>
+                                </Card.Header>
+                                <Card.Body>
+                                    <Row className="g-3">
+                                        <Col xs={6} md={3}>
+                                            <div className="text-center p-2 border rounded">
+                                                <small className="text-muted d-block">Total</small>
+                                                <div className="fw-bold">{process.env.REACT_APP_CURRENCY} {finalAmount}</div>
+                                            </div>
+                                        </Col>
+                                        <Col xs={6} md={3}>
+                                            <div className="text-center p-2 border rounded bg-success-light">
+                                                <small className="text-muted d-block">Paid</small>
+                                                <div className="fw-bold text-success">
+                                                    {process.env.REACT_APP_CURRENCY} {booking.booking.paid_amount || 0}
+                                                </div>
+                                            </div>
+                                        </Col>
+                                        <Col xs={6} md={3}>
+                                            <div className="text-center p-2 border rounded bg-warning-light">
+                                                <small className="text-muted d-block">Pending</small>
+                                                <div className="fw-bold text-warning">
+                                                    {process.env.REACT_APP_CURRENCY} {booking.booking.pending_amount || 0}
+                                                </div>
+                                            </div>
+                                        </Col>
+                                        <Col xs={6} md={3}>
+                                            <div className="text-center p-2 border rounded">
+                                                <small className="text-muted d-block">Progress</small>
+                                                <div className="fw-bold">
+                                                    {((booking.booking.paid_amount / finalAmount) * 100).toFixed(0)}%
+                                                </div>
+                                            </div>
+                                        </Col>
+                                    </Row>
+                                    <div className="mt-3">
+                                        <div className="progress" style={{ height: '8px' }}>
+                                            <div
+                                                className="progress-bar bg-success"
+                                                style={{ width: `${(booking.booking.paid_amount / finalAmount) * 100}%` }}
+                                            />
                                         </div>
                                     </div>
+                                </Card.Body>
+                            </Card>
 
-                                    <div className="mb-3">
-                                        <div className="text-muted text-small">Guest Distribution</div>
-                                        {booking.split_guests && Object.entries(booking.split_guests).map(([roomId, guests]) => {
-                                            const room = booking.room_details?.find(r => r._id === roomId);
-                                            return (
-                                                <div key={roomId} className="d-flex justify-content-between">
-                                                    <span>Room {room?.room_number}:</span>
-                                                    <span className="font-weight-bold">{guests} guest(s)</span>
+                            {/* Guest Information */}
+                            <Card className="mb-4">
+                                <Card.Header>
+                                    <h5 className="mb-0">
+                                        <CsLineIcons icon="user" className="me-2" />
+                                        Guest Information
+                                    </h5>
+                                </Card.Header>
+                                <Card.Body>
+                                    <Row>
+                                        <Col md={4}>
+                                            <div className="mb-3">
+                                                <small className="text-muted d-block">Name</small>
+                                                <div className="fw-bold">{booking.booking.customer_name}</div>
+                                            </div>
+                                        </Col>
+                                        <Col md={4}>
+                                            <div className="mb-3">
+                                                <small className="text-muted d-block">Email</small>
+                                                <div>{booking.booking.customer_email}</div>
+                                            </div>
+                                        </Col>
+                                        <Col md={4}>
+                                            <div className="mb-3">
+                                                <small className="text-muted d-block">Phone</small>
+                                                <div>{booking.booking.customer_phone}</div>
+                                            </div>
+                                        </Col>
+                                        <Col md={4}>
+                                            <div className="mb-3">
+                                                <small className="text-muted d-block">Total Guests</small>
+                                                <div className="fw-bold">{booking.booking.guests_count}</div>
+                                            </div>
+                                        </Col>
+                                    </Row>
+                                </Card.Body>
+                            </Card>
+
+                            {/* Room Information */}
+                            <Card className="mb-4">
+                                <Card.Header>
+                                    <h5 className="mb-0">
+                                        <CsLineIcons icon="bed" className="me-2" />
+                                        Room Information ({booking.rooms.length} {booking.rooms.length > 1 ? 'Rooms' : 'Room'})
+                                    </h5>
+                                </Card.Header>
+                                <Card.Body>
+                                    <Table bordered hover className="mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Room #</th>
+                                                <th>Category</th>
+                                                <th>Floor</th>
+                                                {booking.booking.room_breakdown && booking.booking.room_breakdown.length > 0 && (
+                                                    <>
+                                                        <th className="text-center">Guests</th>
+                                                        <th className="text-end">Price/Night</th>
+                                                        <th className="text-end">Subtotal</th>
+                                                    </>
+                                                )}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {booking.rooms.map((room, index) => {
+                                                const breakdown = booking.booking.room_breakdown?.find(
+                                                    b => b.room_id === room._id || b.room_number === room.room_number
+                                                );
+
+                                                return (
+                                                    <tr key={index}>
+                                                        <td className="fw-bold">{room.room_number}</td>
+                                                        <td>{room.category_name}</td>
+                                                        <td>{room.floor}</td>
+                                                        {breakdown && (
+                                                            <>
+                                                                <td className="text-center">{breakdown.guests_in_room}</td>
+                                                                <td className="text-end">{process.env.REACT_APP_CURRENCY} {breakdown.price_per_night}</td>
+                                                                <td className="text-end fw-bold">{process.env.REACT_APP_CURRENCY} {breakdown.subtotal}</td>
+                                                            </>
+                                                        )}
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </Table>
+                                </Card.Body>
+                            </Card>
+
+                            {/* Booking Dates */}
+                            <Card className="mb-4">
+                                <Card.Header>
+                                    <h5 className="mb-0">
+                                        <CsLineIcons icon="calendar" className="me-2" />
+                                        Booking Dates
+                                    </h5>
+                                </Card.Header>
+                                <Card.Body>
+                                    <Row>
+                                        <Col md={6}>
+                                            <div className="mb-3">
+                                                <small className="text-muted d-block">Expected Check-In</small>
+                                                <div className="fw-bold">{formatDate(booking.booking.check_in_date)}</div>
+                                            </div>
+                                        </Col>
+                                        <Col md={6}>
+                                            <div className="mb-3">
+                                                <small className="text-muted d-block">Expected Check-Out</small>
+                                                <div className="fw-bold">{formatDate(booking.booking.check_out_date)}</div>
+                                            </div>
+                                        </Col>
+                                        {booking.booking.actual_check_in && (
+                                            <Col md={6}>
+                                                <div className="mb-3">
+                                                    <small className="text-muted d-block">Actual Check-In</small>
+                                                    <div className="fw-bold text-success">{formatDateTime(booking.booking.actual_check_in)}</div>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="mb-3">
-                                        <div className="text-muted text-small">Room Number</div>
-                                        <div className="font-weight-bold h5">{booking.room_details?.room_number || 'N/A'}</div>
-                                    </div>
+                                            </Col>
+                                        )}
+                                        {booking.booking.actual_check_out && (
+                                            <Col md={6}>
+                                                <div className="mb-3">
+                                                    <small className="text-muted d-block">Actual Check-Out</small>
+                                                    <div className="fw-bold text-info">{formatDateTime(booking.booking.actual_check_out)}</div>
+                                                </div>
+                                            </Col>
+                                        )}
+                                        <Col md={4}>
+                                            <div className="mb-3">
+                                                <small className="text-muted d-block">Total Nights</small>
+                                                <div className="fw-bold">{booking.booking_summary?.nights || 0}</div>
+                                            </div>
+                                        </Col>
+                                    </Row>
+                                </Card.Body>
+                            </Card>
 
-                                    <div className="mb-3">
-                                        <div className="text-muted text-small">Category</div>
-                                        <div>{booking.room_details?.category_name}</div>
-                                    </div>
-
-                                    <div className="mb-3">
-                                        <div className="text-muted text-small">Floor</div>
-                                        <div>{booking.room_details?.floor}</div>
-                                    </div>
-
-                                    <div className="mb-3">
-                                        <div className="text-muted text-small">Price per Night</div>
-                                        <div className="font-weight-bold">{process.env.REACT_APP_CURRENCY} {booking.room_details?.price_per_night}</div>
-                                    </div>
-                                </>
-                            )}
-                        </Card.Body>
-                    </Card>
-                </Col>
-
-                {/* Booking Dates */}
-                <Col lg={4}>
-                    <Card className="h-100">
-                        <Card.Header>
-                            <h5 className="mb-0">Booking Dates</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            <div className="mb-4">
-                                <div className="text-muted text-small">Check-In Date</div>
-                                <div className="font-weight-bold h5">{formatDate(booking.booking.check_in_date)}</div>
-                                {booking.booking.actual_check_in && (
-                                    <div className="text-muted text-small">
-                                        Actual: {formatDateTime(booking.booking.actual_check_in)}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mb-4">
-                                <div className="text-muted text-small">Check-Out Date</div>
-                                <div className="font-weight-bold h5">{formatDate(booking.check_out_date)}</div>
-                                {booking.actual_check_out && (
-                                    <div className="text-muted text-small">
-                                        Actual: {formatDateTime(booking.actual_check_out)}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mb-3">
-                                <div className="text-muted text-small">Duration</div>
-                                <div className="font-weight-bold">{booking.booking_summary?.nights} nights</div>
-                            </div>
-
-                            {booking.early_check_in && (
-                                <Badge bg="warning" className="me-2">Early Check-In</Badge>
-                            )}
-                            {booking.late_check_out && (
-                                <Badge bg="info">Late Check-Out</Badge>
-                            )}
-                        </Card.Body>
-                    </Card>
-                </Col>
-
-                {/* Billing Summary */}
-                <Col lg={12}>
-                    <Card>
-                        <Card.Header>
-                            <h5 className="mb-0">Billing Summary</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            <div className="border rounded">
-                                {/* Room Charges */}
-                                {booking.is_group_booking ? (
-                                    booking.room_details?.map((room, index) => (
-                                        <div key={room._id} className="p-3 border-bottom">
-                                            <Row className="g-0 align-items-center">
+                            {/* Billing Summary */}
+                            <Card className="mb-4 border-primary">
+                                <Card.Header className="bg-primary text-white">
+                                    <h5 className="mb-0">
+                                        <CsLineIcons icon="file-text" className="me-2" />
+                                        Billing Summary
+                                    </h5>
+                                </Card.Header>
+                                <Card.Body>
+                                    <div className="border rounded">
+                                        <div className="p-3 border-bottom">
+                                            <Row className="g-0">
                                                 <Col>
-                                                    <div className="d-flex align-items-center">
-                                                        <span className="me-2">•</span>
-                                                        <div>
-                                                            <div className="font-weight-bold">Room {room.room_number}</div>
-                                                            <div className="text-muted">
-                                                                {booking.booking_summary?.nights} nights × {process.env.REACT_APP_CURRENCY} {room.price_per_night}
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                    <small className="text-muted">
+                                                        Room Charges ({booking.booking_summary?.nights} nights × {booking.booking.total_rooms || booking.rooms.length} room{booking.rooms.length > 1 ? 's' : ''})
+                                                    </small>
                                                 </Col>
-                                                <Col xs="auto" className="font-weight-bold">
-                                                    {process.env.REACT_APP_CURRENCY} {(room.price_per_night * booking.booking_summary?.nights).toFixed(2)}
+                                                <Col xs="auto" className="fw-bold">
+                                                    {process.env.REACT_APP_CURRENCY} {booking.booking.total_amount + (booking.booking.discount_amount || 0)}
                                                 </Col>
                                             </Row>
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="p-3 border-bottom">
-                                        <Row className="g-0 align-items-center">
-                                            <Col>
-                                                <div className="d-flex align-items-center">
-                                                    <span className="me-2">•</span>
-                                                    <div>
-                                                        <div className="font-weight-bold">Room {booking.room_details?.room_number}</div>
-                                                        <div className="text-muted">
-                                                            {booking.booking_summary?.nights} nights × {process.env.REACT_APP_CURRENCY} {booking.booking_summary?.price_per_night}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </Col>
-                                            <Col xs="auto" className="font-weight-bold">
-                                                {process.env.REACT_APP_CURRENCY} {booking.booking_summary?.subtotal}
-                                            </Col>
-                                        </Row>
-                                    </div>
-                                )}
 
-                                {/* Discount */}
-                                {booking.discount_amount > 0 && (
-                                    <div className="p-3 border-bottom">
-                                        <Row className="g-0">
-                                            <Col>
-                                                <div className="text-muted">Discount</div>
-                                                {booking.coupon_code && (
-                                                    <div className="text-small">Coupon: {booking.coupon_code}</div>
-                                                )}
-                                            </Col>
-                                            <Col xs="auto" className="text-danger font-weight-bold">
-                                                -{process.env.REACT_APP_CURRENCY} {booking.discount_amount.toFixed(2)}
-                                            </Col>
-                                        </Row>
-                                    </div>
-                                )}
+                                        {booking.booking.discount_amount > 0 && (
+                                            <div className="p-3 border-bottom">
+                                                <Row className="g-0">
+                                                    <Col>
+                                                        <small className="text-muted">
+                                                            Discount {booking.booking.coupon_code && `(${booking.booking.coupon_code})`}
+                                                        </small>
+                                                    </Col>
+                                                    <Col xs="auto" className="text-danger fw-bold">
+                                                        -{process.env.REACT_APP_CURRENCY} {booking.booking.discount_amount}
+                                                    </Col>
+                                                </Row>
+                                            </div>
+                                        )}
 
-                                {/* Extra Charges */}
-                                {booking.extra_charges > 0 && (
-                                    <div className="p-3 border-bottom">
-                                        <Row className="g-0">
-                                            <Col>
-                                                <div className="text-muted">Extra Charges</div>
-                                                {booking.extra_charges_description && (
-                                                    <div className="text-small">{booking.extra_charges_description}</div>
-                                                )}
-                                            </Col>
-                                            <Col xs="auto" className="text-primary font-weight-bold">
-                                                +{process.env.REACT_APP_CURRENCY} {booking.extra_charges.toFixed(2)}
-                                            </Col>
-                                        </Row>
-                                    </div>
-                                )}
+                                        {booking.booking.extra_charges > 0 && (
+                                            <div className="p-3 border-bottom">
+                                                <Row className="g-0">
+                                                    <Col>
+                                                        <small className="text-muted">
+                                                            Extra Charges
+                                                            {booking.booking.extra_charges_description && (
+                                                                <div className="text-small mt-1">{booking.booking.extra_charges_description}</div>
+                                                            )}
+                                                        </small>
+                                                    </Col>
+                                                    <Col xs="auto" className="text-primary fw-bold">
+                                                        +{process.env.REACT_APP_CURRENCY} {booking.booking.extra_charges}
+                                                    </Col>
+                                                </Row>
+                                            </div>
+                                        )}
 
-                                {/* Tax (if applicable) */}
-                                {booking.tax_amount > 0 && (
-                                    <div className="p-3 border-bottom">
-                                        <Row className="g-0">
-                                            <Col>
-                                                <div className="text-muted">Tax (12% GST)</div>
-                                            </Col>
-                                            <Col xs="auto" className="font-weight-bold">
-                                                +{process.env.REACT_APP_CURRENCY} {booking.tax_amount.toFixed(2)}
-                                            </Col>
-                                        </Row>
+                                        <div className="p-3 bg-light">
+                                            <Row className="g-0">
+                                                <Col>
+                                                    <h5 className="mb-0">Grand Total</h5>
+                                                </Col>
+                                                <Col xs="auto">
+                                                    <h5 className="mb-0 text-primary">
+                                                        {process.env.REACT_APP_CURRENCY} {finalAmount.toFixed(2)}
+                                                    </h5>
+                                                </Col>
+                                            </Row>
+                                        </div>
                                     </div>
-                                )}
+                                </Card.Body>
+                            </Card>
 
-                                {/* Total */}
-                                <div className="p-3 bg-light">
-                                    <Row className="g-0 align-items-center">
-                                        <Col>
-                                            <h5 className="mb-0">Total Amount</h5>
-                                            <div className="text-muted">Amount to be paid</div>
+                            {/* Special Requests */}
+                            {booking.booking.special_requests && (
+                                <Card className="mb-4">
+                                    <Card.Header>
+                                        <h6 className="mb-0">
+                                            <CsLineIcons icon="message-square" className="me-2" />
+                                            Special Requests
+                                        </h6>
+                                    </Card.Header>
+                                    <Card.Body>
+                                        <p className="mb-0">{booking.booking.special_requests}</p>
+                                    </Card.Body>
+                                </Card>
+                            )}
+
+                            {/* Booking Metadata */}
+                            <Card className="mb-4">
+                                <Card.Header>
+                                    <h6 className="mb-0">
+                                        <CsLineIcons icon="info" className="me-2" />
+                                        Additional Information
+                                    </h6>
+                                </Card.Header>
+                                <Card.Body>
+                                    <Row>
+                                        <Col md={6}>
+                                            <div className="mb-2">
+                                                <small className="text-muted d-block">Created At</small>
+                                                <div>{formatDateTime(booking.booking.created_at)}</div>
+                                            </div>
                                         </Col>
-                                        <Col xs="auto">
-                                            <h4 className="mb-0 text-primary">
-                                                {process.env.REACT_APP_CURRENCY} {booking.total_amount?.toFixed(2)}
-                                            </h4>
+                                        <Col md={6}>
+                                            <div className="mb-2">
+                                                <small className="text-muted d-block">Last Updated</small>
+                                                <div>{formatDateTime(booking.booking.updated_at)}</div>
+                                            </div>
                                         </Col>
                                     </Row>
-                                </div>
-                            </div>
-                        </Card.Body>
-                    </Card>
-                </Col>
+                                </Card.Body>
+                            </Card>
 
-                {/* Activity Log */}
-                <Col lg={12}>
-                    <Card>
-                        <Card.Header>
-                            <h5 className="mb-0">Activity Log</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            <Table hover>
-                                <thead>
-                                    <tr>
-                                        <th>Date & Time</th>
-                                        <th>Activity</th>
-                                        <th>User</th>
-                                        <th>Details</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {booking.activity_log?.length > 0 ? (
-                                        booking.activity_log.map((activity, index) => (
-                                            <tr key={index}>
-                                                <td>{formatDateTime(activity.timestamp)}</td>
-                                                <td>
-                                                    <Badge bg={activity.type === 'created' ? 'success' :
-                                                        activity.type === 'updated' ? 'info' :
-                                                            activity.type === 'cancelled' ? 'danger' : 'secondary'}>
-                                                        {activity.type}
-                                                    </Badge>
-                                                </td>
-                                                <td>{activity.user_name || 'System'}</td>
-                                                <td>{activity.description}</td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="4" className="text-center text-muted">
-                                                No activity recorded
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </Table>
-                        </Card.Body>
-                    </Card>
+                            {/* Action Buttons */}
+                            <Card>
+                                <Card.Body>
+                                    <div className="d-flex gap-2 justify-content-end flex-wrap">
+                                        <Button variant="outline-secondary" onClick={handleBack}>
+                                            <CsLineIcons icon="arrow-left" className="me-2" />
+                                            Back to Bookings
+                                        </Button>
+
+                                        <Button
+                                            variant="outline-primary"
+                                            onClick={() => setShowPaymentTracker(true)}
+                                        >
+                                            <CsLineIcons icon="credit-card" className="me-2" />
+                                            Manage Payments
+                                        </Button>
+
+                                        {booking.booking.booking_status === 'confirmed' && (
+                                            <>
+                                                <Button variant="primary" onClick={handleCheckIn}>
+                                                    <CsLineIcons icon="log-in" className="me-2" />
+                                                    Check-In
+                                                </Button>
+                                                <Button variant="outline-primary" onClick={handleEdit}>
+                                                    <CsLineIcons icon="edit" className="me-2" />
+                                                    Edit
+                                                </Button>
+                                                <Button variant="danger" onClick={handleCancel}>
+                                                    <CsLineIcons icon="x-circle" className="me-2" />
+                                                    Cancel
+                                                </Button>
+                                            </>
+                                        )}
+
+                                        {booking.booking.booking_status === 'checked_in' && (
+                                            <>
+                                                <Button variant="primary" onClick={handleCheckOut}>
+                                                    <CsLineIcons icon="log-out" className="me-2" />
+                                                    Check-Out
+                                                </Button>
+                                                <Button variant="outline-primary" onClick={handleEdit}>
+                                                    <CsLineIcons icon="edit" className="me-2" />
+                                                    Edit
+                                                </Button>
+                                            </>
+                                        )}
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                    </Row>
                 </Col>
             </Row>
 
-            {/* Cancel Modal */}
-            <Modal show={showCancelModal} onHide={() => setShowCancelModal(false)}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Cancel Booking</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <Alert variant="warning">
-                        <CsLineIcons icon="alert-triangle" className="me-2" />
-                        Are you sure you want to cancel this booking? This action cannot be undone.
-                    </Alert>
-                    <Form.Group>
-                        <Form.Label>Reason for cancellation</Form.Label>
-                        <Form.Control as="textarea" rows={3} placeholder="Optional: Enter reason for cancellation" />
-                    </Form.Group>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowCancelModal(false)}>
-                        Keep Booking
-                    </Button>
-                    <Button variant="danger" onClick={handleCancelBooking}>
-                        Yes, Cancel Booking
-                    </Button>
-                </Modal.Footer>
-            </Modal>
-
-            {/* Invoice Modal */}
-            <Modal show={showInvoiceModal} onHide={() => setShowInvoiceModal(false)} size="lg">
-                <Modal.Header closeButton>
-                    <Modal.Title>Invoice Preview</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {invoiceData ? (
-                        <div className="invoice-preview">
-                            {/* Invoice content here */}
-                            <p>Invoice generated successfully</p>
-                        </div>
-                    ) : (
-                        <div className="text-center py-4">
-                            <Spinner animation="border" variant="primary" />
-                        </div>
-                    )}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowInvoiceModal(false)}>
-                        Close
-                    </Button>
-                    {/* <Button variant="primary" onClick={handleDownloadInvoice}>
-                        <CsLineIcons icon="download" className="me-2" />
-                        Download Invoice
-                    </Button> */}
-                    <Button variant="success" onClick={() => window.print()}>
-                        <CsLineIcons icon="printer" className="me-2" />
-                        Print Invoice
-                    </Button>
-                </Modal.Footer>
-            </Modal>
+            {/* Payment Tracker Modal */}
+            <PaymentTracker
+                show={showPaymentTracker}
+                onHide={() => setShowPaymentTracker(false)}
+                bookingId={id}
+                bookingReference={booking.booking.booking_reference}
+                onPaymentAdded={handlePaymentAdded}
+            />
         </>
     );
 };

@@ -83,31 +83,32 @@ const NewBooking = () => {
 
     setSearching(true);
     try {
-      const response = await roomAPI.getAll({ status: 'available' });
-      const rooms = response.data.data || [];
+      const responseRooms = await roomAPI.getAll({ status: 'available' });
+      const rooms = responseRooms.data.data || [];
 
-      const roomsWithAvailability = await Promise.all(
-        rooms.map(async (room) => {
-          try {
-            const availResponse = await bookingAPI.checkAvailability({
-              room_id: room._id,
-              check_in_date: searchData.check_in_date,
-              check_out_date: searchData.check_out_date,
-            });
-            return {
-              ...room,
-              available: availResponse.data.available,
-              nights: availResponse.data.data?.nights,
-              estimatedTotal: availResponse.data.data?.estimated_total,
-            };
-          } catch (error) {
-            return { ...room, available: false };
-          }
-        })
-      );
+      const roomIds = rooms.map(r => r._id);
 
-      const availRooms = roomsWithAvailability.filter((r) => r.available);
+      const response = await bookingAPI.checkAvailability({
+        room_ids: roomIds, // ✅ ARRAY
+        check_in_date: searchData.check_in_date,
+        check_out_date: searchData.check_out_date,
+      });
+
+      const availableRoomIds = response.data.data.rooms
+        .filter(r => r.available !== false)
+        .map(r => r.room_id);
+
+      const availRooms = rooms
+        .filter(room => availableRoomIds.includes(room._id))
+        .map(room => ({
+          ...room,
+          nights: response.data.data.nights,
+          estimatedTotal:
+            room.current_price * response.data.data.nights,
+        }));
+
       setAvailableRooms(availRooms);
+
 
       if (availRooms.length === 0) {
         toast.warning('No rooms available for selected dates');

@@ -29,7 +29,6 @@ const createBooking = async (req, res) => {
       guests_count,
       booking_source,
       special_requests,
-      payment_method,
       coupon_code,
       discount_amount,
     } = req.body;
@@ -187,8 +186,6 @@ const createBooking = async (req, res) => {
       booking_status: "confirmed",
       booking_source: booking_source || "direct",
       special_requests: special_requests || "",
-      payment_method: payment_method || null,
-      payment_status: payment_method ? "paid" : "pending",
       discount_amount: discount_amount || 0,
       coupon_code: coupon_code || null,
       booking_reference,
@@ -365,6 +362,7 @@ const getBooking = async (req, res) => {
           room_number: room.room_number,
           floor: room.floor,
           category_name: category?.category_name,
+          current_price: room.current_price,
           amenities: category?.amenities,
         };
       })
@@ -483,10 +481,9 @@ const updateBooking = async (req, res) => {
       customer_phone,
       check_in_date,
       check_out_date,
+      booking_status,
       guests_count,
       special_requests,
-      payment_status,
-      payment_method,
     } = req.body;
 
     // 📅 Date update + availability check
@@ -494,7 +491,7 @@ const updateBooking = async (req, res) => {
       const newCheckIn = check_in_date || booking.check_in_date;
       const newCheckOut = check_out_date || booking.check_out_date;
 
-      const dateValidation = validateBookingDates(newCheckIn, newCheckOut);
+      const dateValidation = validateBookingDates(newCheckIn, newCheckOut, booking_status);
       if (!dateValidation.isValid) {
         return res.status(400).json({
           success: false,
@@ -570,8 +567,6 @@ const updateBooking = async (req, res) => {
 
     if (customer_phone) booking.customer_phone = customer_phone;
     if (special_requests !== undefined) booking.special_requests = special_requests;
-    if (payment_status) booking.payment_status = payment_status;
-    if (payment_method) booking.payment_method = payment_method;
 
     const updatedBooking = await booking.save();
 

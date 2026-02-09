@@ -11,6 +11,7 @@ const qsr = {
 const operation = {
   bookings: withOperationsLayout(lazy(() => import('views/pages/operation/booking/Bookings'))),
   bookingDetails: withOperationsLayout(lazy(() => import('views/pages/operation/booking/BookingDetails'))),
+  editBooking: withOperationsLayout(lazy(() => import('views/pages/operation/booking/EditBooking'))),
   newBooking: withOperationsLayout(lazy(() => import('views/pages/operation/booking/Newbooking'))),
   checkInOut: withOperationsLayout(lazy(() => import('views/pages/operation/booking/Checkinout'))),
   RoomCategories: withOperationsLayout(lazy(() => import('views/pages/operation/Room/Roomcategories'))),
@@ -41,6 +42,12 @@ const allRoutes = {
       icon: 'list',
       component: qsr.operation,
       subs: [
+        {
+          path: '/bookings/edit/:id',
+          label: 'Edit Booking',
+          hideSub: true,
+          component: operation.editBooking,
+        },
         {
           path: '/bookings/:id',
           label: 'Booking Details',

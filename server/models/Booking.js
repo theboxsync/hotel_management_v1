@@ -3,10 +3,7 @@ const Schema = mongoose.Schema;
 
 const BookingSchema = new Schema({
   hotel_id: { type: String, required: true },
-
-  // CHANGED: room_id → room_ids (array)
-  room_ids: [{ type: String, required: true }], // Multiple rooms
-
+  room_ids: [{ type: String, required: true }],
   customer_name: { type: String, required: true },
   customer_email: { type: String, required: true },
   customer_phone: { type: String, required: true },
@@ -24,11 +21,13 @@ const BookingSchema = new Schema({
   checked_out_by: { type: String },
 
   guests_count: { type: Number, required: true },
-
-  // NEW: Track number of rooms
   total_rooms: { type: Number, required: true, default: 1 },
 
+  // UPDATED PAYMENT TRACKING
   total_amount: { type: Number, required: true },
+  paid_amount: { type: Number, default: 0 }, // Total paid so far
+  pending_amount: { type: Number, default: 0 }, // Remaining to pay
+
   booking_status: {
     type: String,
     enum: ["confirmed", "checked_in", "checked_out", "cancelled", "no_show"],
@@ -40,20 +39,18 @@ const BookingSchema = new Schema({
     default: "direct",
   },
   special_requests: { type: String },
+
   payment_status: {
     type: String,
     enum: ["pending", "paid", "refunded", "partial"],
     default: "pending",
   },
-  payment_method: {
-    type: String,
-    enum: ["cash", "card", "upi", "online"],
-  },
+
   discount_amount: { type: Number, default: 0 },
   coupon_code: { type: String },
   booking_reference: { type: String, unique: true },
 
-  // NEW: Room breakdown for multi-room bookings
+  // Room breakdown
   room_breakdown: [
     {
       room_id: { type: String, required: true },
@@ -79,11 +76,26 @@ const BookingSchema = new Schema({
 BookingSchema.index({ hotel_id: 1, check_in_date: 1, check_out_date: 1 });
 BookingSchema.index({ booking_reference: 1 });
 BookingSchema.index({ customer_email: 1 });
-BookingSchema.index({ room_ids: 1 }); // NEW: Index for room_ids array
+BookingSchema.index({ room_ids: 1 });
+BookingSchema.index({ payment_status: 1 });
 
-// Update timestamp
+// Update timestamp and calculate pending amount
 BookingSchema.pre("save", async function () {
   this.updated_at = new Date();
+
+  // Calculate pending amount
+  const finalAmount = this.total_amount + (this.extra_charges || 0);
+  this.pending_amount = finalAmount - (this.paid_amount || 0);
+
+  // Auto-update payment status based on amounts
+  if (this.pending_amount <= 0) {
+    this.payment_status = "paid";
+  } else if (this.paid_amount > 0 && this.pending_amount > 0) {
+    this.payment_status = "partial";
+  } else if (this.paid_amount === 0) {
+    this.payment_status = "pending";
+  }
+
   return;
 });
 
