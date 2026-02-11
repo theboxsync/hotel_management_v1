@@ -1,76 +1,241 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Button, Form } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Link, NavLink } from 'react-router-dom';
+import axios from 'axios';
+import { Card, Col, Row, Button, Form, Alert, Spinner } from 'react-bootstrap';
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
 import LayoutFullpage from 'layout/LayoutFullpage';
 import CsLineIcons from 'cs-line-icons/CsLineIcons';
 import HtmlHead from 'components/html-head/HtmlHead';
+import { toast } from 'react-toastify';
 
 const ForgotPassword = () => {
   const title = 'Forgot Password';
-  const description = 'Forgot Password Page';
+  const description = 'Reset your admin password';
 
-  const validationSchema = Yup.object().shape({
-    email: Yup.string().email().required('Email is required'),
-  });
-  const initialValues = { email: '' };
-  const onSubmit = (values) => console.log('submit form', values);
+  const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState(1); // Step 1: OTP, Step 2: Change Password
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const formik = useFormik({ initialValues, validationSchema, onSubmit });
-  const { handleSubmit, handleChange, values, touched, errors } = formik;
+  const handleSendOtp = async (e) => {
+    setIsLoading(true);
+    e.preventDefault();
+    try {
+      const response = await axios.post(`${process.env.REACT_APP_API}/user/send-otp`, { email });
+      setSuccess(response.data.message);
+      setError('');
+      setStep(2); // Move to the next step
+    } catch (err) {
+      setError(err.response?.data?.message || 'An error occurred.');
+      setSuccess('');
+      toast.error(err.response?.data?.message || 'An error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    setIsLoading(true);
+    e.preventDefault();
+    try {
+      const response = await axios.post(`${process.env.REACT_APP_API}/user/verify-otp`, { email, otp });
+      if (!response.data.verified) {
+        throw new Error('OTP verification failed.');
+      } else {
+        setSuccess(response.data.message);
+        setError('');
+        setStep(3);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Invalid OTP.');
+      setSuccess('');
+      toast.error(err.response?.data?.message || 'Invalid OTP.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    setIsLoading(true);
+
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setError('Password do not match.');
+      setSuccess('');
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const response = await axios.post(`${process.env.REACT_APP_API}/user/reset-password`, { email, newPassword });
+      setSuccess(response.data.message);
+      setError('');
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'An error occurred.');
+      setSuccess('');
+      toast.error(err.response?.data?.message || 'An error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const stepHeader = {
+    1: {
+      title: 'Forgot your password?',
+      subtitle: 'No worries — we’ll help you reset it.',
+    },
+    2: {
+      title: 'Verify your OTP',
+      subtitle: 'Almost there — let’s confirm it’s you.',
+    },
+    3: {
+      title: 'Reset your Password',
+      subtitle: 'Create a new password to secure your account.',
+    },
+  };
 
   const leftSide = (
     <div className="min-h-100 d-flex align-items-center">
-      <div className="w-100 w-lg-75 w-xxl-50">
-        <div>
-          <div className="mb-5">
-            <h1 className="display-3 text-white">Multiple Niches</h1>
-            <h1 className="display-3 text-white">Ready for Your Project</h1>
-          </div>
-          <p className="h6 text-white lh-1-5 mb-5">
-            Dynamically target high-payoff intellectual capital for customized technologies. Objectively integrate emerging core competencies before
-            process-centric communities...
-          </p>
-          <div className="mb-5">
-            <Button size="lg" variant="outline-white" href="/">
-              Learn More
-            </Button>
-          </div>
-        </div>
-      </div>
+      <div className="w-100 w-lg-75 w-xxl-50" />
     </div>
   );
 
   const rightSide = (
     <div className="sw-lg-70 min-h-100 bg-foreground d-flex justify-content-center align-items-center shadow-deep py-5 full-page-content-right-border">
-      <div className="sw-lg-50 px-5">
-        <div className="sh-11">
-          <NavLink to="/">
-            <div className="logo-default" />
-          </NavLink>
+      <div className="sw-lg-50 px-5 d-flex flex-column min-h-100 mx-auto">
+
+        {/* CENTER CONTENT */}
+        <div className="my-auto">
+
+          {/* HEADER — CHANGES BASED ON STEP */}
+          <div className="mb-4">
+            <h2 className="cta-1 mb-0 text-primary">
+              {stepHeader[step].title}
+            </h2>
+            <p className="h6 mt-2">
+              {stepHeader[step].subtitle}
+            </p>
+          </div>
+
+
+          {/* STEP 1 */}
+          {step === 1 && (
+            <form onSubmit={handleSendOtp}>
+              <div className="mb-3 filled form-group tooltip-end-top">
+                <CsLineIcons icon="email" />
+                <Form.Control
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  disabled={isLoading}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+
+              {error && <div className="text-danger mb-2">{error}</div>}
+              {success && <div className="text-success mb-2">{success}</div>}
+
+              <div className="d-flex justify-content-between align-items-center">
+                <Button size="lg" type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Spinner size="sm" className="me-2" />
+                      Sending...
+                    </>
+                  ) : (
+                    'Send OTP'
+                  )}
+                </Button>
+                <NavLink to="/login" className="justify-content-left" >
+                  <Button size="lg" type="submit" className="btn btn-primary">
+                    Login
+                  </Button>
+                </NavLink>
+              </div>
+            </form>
+          )}
+
+          {/* STEP 2 */}
+
+          {step === 2 && (
+            <form onSubmit={handleVerifyOtp}>
+              <div className="mb-3 filled form-group tooltip-end-top">
+                <CsLineIcons icon="key" />
+                <Form.Control
+                  type="text"
+                  placeholder="Enter OTP"
+                  value={otp}
+                  disabled={isLoading}
+                  onChange={(e) => setOtp(e.target.value)}
+                />
+              </div>
+
+              {error && <div className="text-danger mb-2">{error}</div>}
+
+              <div className="d-flex justify-content-between align-items-center">
+                <Button size="lg" type="submit" disabled={isLoading}>
+                  {isLoading ? 'Verifying...' : 'Verify OTP'}
+                </Button>
+
+                <Button className="btn btn-primary" onClick={() => setStep(1)}>
+                  Back
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* STEP 3 */}
+          {step === 3 && (
+            <form onSubmit={handleResetPassword}>
+              <div className="mb-3 filled form-group tooltip-end-top">
+                <CsLineIcons icon="lock-off" />
+                <Form.Control
+                  type="password"
+                  placeholder="New Password"
+                  value={newPassword}
+                  disabled={isLoading}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+
+              <div className="mb-3 filled form-group tooltip-end-top">
+                <CsLineIcons icon="lock-off" />
+                <Form.Control
+                  type="password"
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  disabled={isLoading}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+
+              {error && <div className="text-danger mb-2">{error}</div>}
+
+              <div className="d-flex justify-content-between align-items-center">
+                <Button size="lg" type="submit" disabled={isLoading}>
+                  {isLoading ? 'Resetting...' : 'Reset Password'}
+                </Button>
+
+                <Button className="btn btn-primary" onClick={() => setStep(2)}>
+                  Back
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
-        <div className="mb-5">
-          <h2 className="cta-1 mb-0 text-primary">Password is gone?</h2>
-          <h2 className="cta-1 text-primary">Let's reset it!</h2>
-        </div>
-        <div className="mb-5">
-          <p className="h6">Please enter your email to receive a link to reset your password.</p>
-          <p className="h6">
-            If you are a member, please <NavLink to="/login">login</NavLink>.
+
+        {/* FOOTER */}
+        <div className="mt-auto text-center pt-4">
+          <p className="mb-0 text-muted" style={{ fontSize: '12px' }}>
+            Powered by <strong>TheBoxSync</strong>
           </p>
-        </div>
-        <div>
-          <form id="forgotPasswordForm" className="tooltip-end-bottom" onSubmit={handleSubmit}>
-            <div className="mb-3 filled form-group tooltip-end-top">
-              <CsLineIcons icon="email" />
-              <Form.Control type="text" name="email" placeholder="Email" value={values.email} onChange={handleChange} />
-              {errors.email && touched.email && <div className="d-block invalid-tooltip">{errors.email}</div>}
-            </div>
-            <Button size="lg" type="submit">
-              Send Reset Email
-            </Button>
-          </form>
         </div>
       </div>
     </div>

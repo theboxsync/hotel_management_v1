@@ -48,7 +48,7 @@ const BookingSchema = new Schema({
 
   discount_amount: { type: Number, default: 0 },
   coupon_code: { type: String },
-  booking_reference: { type: String, unique: true },
+  booking_reference: { type: String },
 
   // Room breakdown
   room_breakdown: [

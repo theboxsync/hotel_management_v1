@@ -532,28 +532,6 @@ const updateBooking = async (req, res) => {
       booking.total_amount = total - booking.discount_amount;
     }
 
-    // 👥 Guest count validation
-    if (guests_count !== undefined) {
-      const rooms = await Room.find({ _id: { $in: booking.room_ids } });
-      const categories = await RoomCategory.find({
-        _id: { $in: rooms.map(r => r.category_id) },
-      });
-
-      const maxGuests = categories.reduce(
-        (sum, cat) => sum + cat.max_occupancy,
-        0
-      );
-
-      if (guests_count > maxGuests) {
-        return res.status(400).json({
-          success: false,
-          message: `Maximum allowed guests for selected rooms is ${maxGuests}`,
-        });
-      }
-
-      booking.guests_count = guests_count;
-    }
-
     // ✏️ Simple field updates
     if (customer_name) booking.customer_name = customer_name;
 

@@ -36,7 +36,7 @@ const PaymentTransactionSchema = new Schema({
     payment_gateway: { type: String }, // If online payment (razorpay, stripe, etc.)
 
     // Receipt
-    receipt_number: { type: String, unique: true },
+    receipt_number: { type: String },
     receipt_url: { type: String },
 
     created_at: { type: Date, default: Date.now },

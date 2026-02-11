@@ -11,27 +11,29 @@ const NavIconMenu = () => {
   const history = useHistory();
   const { color } = useSelector((state) => state.settings);
   const dispatch = useDispatch();
-
+  
+  
   const onLightDarkModeClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
     dispatch(settingsChangeColor(color.includes('light') ? color.replace('light', 'dark') : color.replace('dark', 'light')));
   };
   const [showSearchModal, setShowSearchModal] = useState(false);
-
+  
   const onSearchIconClick = (e) => {
     e.preventDefault();
     setShowSearchModal(true);
   };
-
+  
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = () => {
+    localStorage.removeItem('adminUser');
     localStorage.removeItem('token');
     console.log('User logged out');
     setShowLogoutModal(false);
     history.push('/login');
-  };
+  }
   return (
     <>
       <ul className="list-unstyled list-inline text-center menu-icons">
@@ -55,7 +57,7 @@ const NavIconMenu = () => {
       </ul>
       <SearchModal show={showSearchModal} setShow={setShowSearchModal} />
 
-      <Modal className="modal-close-out" show={showLogoutModal} onHide={() => setShowLogoutModal(false)} centered>
+      <Modal show={showLogoutModal} onHide={() => setShowLogoutModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Logout</Modal.Title>
         </Modal.Header>
@@ -63,7 +65,7 @@ const NavIconMenu = () => {
           <p>Are you sure you want to Logout</p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowLogoutModal(false)}>
+          <Button variant="dark" onClick={() => setShowLogoutModal(false)}>
             Cancel
           </Button>
           <Button variant="danger" onClick={handleLogout}>

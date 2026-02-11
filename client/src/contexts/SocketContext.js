@@ -10,7 +10,7 @@ export const useSocket = () => useContext(SocketContext);
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [notifications, setNotifications] = useState([]);
-  const { currentUser } = useContext(AuthContext);
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     const s = io(process.env.REACT_APP_API_URL);

@@ -9,6 +9,8 @@ const createUploadDirs = () => {
     "uploads/room-category",
     "uploads/rooms",
     "uploads/profile",
+    "uploads/inventory",
+    "uploads/staff",
     "uploads/temp",
   ];
 
@@ -38,6 +40,28 @@ const roomCategoryStorage = multer.diskStorage({
 const roomStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/rooms");
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const hotel_id = req.user?.hotel_id || "unknown";
+    cb(null, `${hotel_id}-${uniqueSuffix}${path.extname(file.originalname)}`);
+  },
+});
+
+const inventoryStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/inventory");
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const hotel_id = req.user?.hotel_id || "unknown";
+    cb(null, `${hotel_id}-${uniqueSuffix}${path.extname(file.originalname)}`);
+  },
+});
+
+const staffStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/staff");
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -97,6 +121,22 @@ const uploadRoomImage = multer({
   fileFilter: imageFileFilter,
 });
 
+const uploadInventoryImage = multer({
+  storage: inventoryStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max file size
+  },
+  fileFilter: imageFileFilter,
+});
+
+const uploadStaffImage = multer({
+  storage: staffStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max file size
+  },
+  fileFilter: imageFileFilter,
+});
+
 const uploadProfileImage = multer({
   storage: profileStorage,
   limits: {
@@ -132,6 +172,8 @@ const getFileUrl = (filepath) => {
 module.exports = {
   uploadRoomCategoryImage,
   uploadRoomImage,
+  uploadInventoryImage,
+  uploadStaffImage,
   uploadProfileImage,
   deleteFile,
   deleteFiles,

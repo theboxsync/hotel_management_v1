@@ -1,23 +1,27 @@
 /* eslint-disable */
 import { lazy } from 'react';
 import { DEFAULT_PATHS } from 'config.js';
-import withOperationsLayout from 'views/pages/operation/withOperationsLayout';
+import withOperationsLayout from 'views/admin/operation/withOperationsLayout';
+import RequestedInventory from 'views/admin/operation/inventory/RequestedInventory';
 
-const qsr = {
-  dashboard: lazy(() => import('views/pages/Dashboard')),
-  operation: lazy(() => import('views/pages/operation/Operations')),
+const navItems = {
+  dashboard: lazy(() => import('views/admin/Dashboard')),
+  staff: lazy(() => import('views/admin/staff/Staff')),
 };
 
 const operation = {
-  bookings: withOperationsLayout(lazy(() => import('views/pages/operation/booking/Bookings'))),
-  bookingDetails: withOperationsLayout(lazy(() => import('views/pages/operation/booking/BookingDetails'))),
-  editBooking: withOperationsLayout(lazy(() => import('views/pages/operation/booking/EditBooking'))),
-  newBooking: withOperationsLayout(lazy(() => import('views/pages/operation/booking/Newbooking'))),
-  checkInOut: withOperationsLayout(lazy(() => import('views/pages/operation/booking/Checkinout'))),
-  RoomCategories: withOperationsLayout(lazy(() => import('views/pages/operation/Room/Roomcategories'))),
-  AddEditRoomCategory: withOperationsLayout(lazy(() => import('views/pages/operation/Room/AddEditRoomCategory'))),
-  Rooms: withOperationsLayout(lazy(() => import('views/pages/operation/Room/Rooms'))),
-  AddEditRoom: withOperationsLayout(lazy(() => import('views/pages/operation/Room/AddEditRoom'))),
+  bookings: withOperationsLayout(lazy(() => import('views/admin/operation/booking/Bookings'))),
+  bookingDetails: withOperationsLayout(lazy(() => import('views/admin/operation/booking/BookingDetails'))),
+  editBooking: withOperationsLayout(lazy(() => import('views/admin/operation/booking/EditBooking'))),
+  newBooking: withOperationsLayout(lazy(() => import('views/admin/operation/booking/Newbooking'))),
+  checkInOut: withOperationsLayout(lazy(() => import('views/admin/operation/booking/Checkinout'))),
+  RoomCategories: withOperationsLayout(lazy(() => import('views/admin/operation/Room/Roomcategories'))),
+  AddEditRoomCategory: withOperationsLayout(lazy(() => import('views/admin/operation/Room/AddEditRoomCategory'))),
+  Rooms: withOperationsLayout(lazy(() => import('views/admin/operation/Room/Rooms'))),
+  AddEditRoom: withOperationsLayout(lazy(() => import('views/admin/operation/Room/AddEditRoom'))),
+  RequestedInventory: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/RequestedInventory'))),
+  InventoryHistory: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/InventoryHistory'))),
+  AddInventory: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/AddInventory'))),
 };
 
 const appRoot = DEFAULT_PATHS.APP.endsWith('/') ? DEFAULT_PATHS.APP.slice(1, DEFAULT_PATHS.APP.length) : DEFAULT_PATHS.APP;
@@ -34,13 +38,14 @@ const allRoutes = {
       path: `${appRoot}/dashboard`,
       label: 'Dashboard',
       icon: 'home',
-      component: qsr.dashboard,
+      component: navItems.dashboard,
     },
     {
       path: `${appRoot}/operations`,
       label: 'Operations',
       icon: 'list',
-      component: qsr.operation,
+      redirect: true,
+      to: `${appRoot}/operations/bookings`,
       subs: [
         {
           path: '/bookings/edit/:id',
@@ -122,7 +127,38 @@ const allRoutes = {
           redirect: true,
           to: '/operations/rooms/manage',
         },
+        {
+          path: '/inventory/requested',
+          label: 'Requested Inventory',
+          hideSub: true,
+          component: operation.RequestedInventory,
+        },
+        {
+          path: '/inventory/history',
+          label: 'Inventory History',
+          hideSub: true,
+          component: operation.InventoryHistory,
+        },
+        {
+          path: '/inventory/add',
+          label: 'Add Inventory',
+          hideSub: true,
+          component: operation.AddInventory,
+        },
+        {
+          path: '/inventory',
+          label: 'Inventory',
+          hideSub: true,
+          redirect: true,
+          to: '/operations/inventory/requested',
+        },
       ],
+    },
+    {
+      path: `${appRoot}/staff`,
+      label: 'Staff',
+      icon: 'user',
+      component: navItems.staff,
     },
   ],
   sidebarItems: [
