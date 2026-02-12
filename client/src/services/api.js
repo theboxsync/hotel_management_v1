@@ -97,5 +97,11 @@ export const paymentAPI = {
   deletePayment: (paymentId) => api.delete(`/payments/${paymentId}`),
 };
 
+// Analytics API
+export const analyticsAPI = {
+  // Get dashboard analytics
+  getDashboard: (period = 'month') => api.get('/analytics/dashboard', { params: { period } }),
+};
+
 
 export default api;

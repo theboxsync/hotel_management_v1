@@ -341,7 +341,7 @@ const InventoryHistory = () => {
               size="sm"
               title="View"
               className="btn-icon btn-icon-only"
-              onClick={() => history.push(`/operations/inventory-details/${row.original._id}`)}
+              onClick={() => history.push(`/operations/inventory/details/${row.original._id}`)}
             >
               <CsLineIcons icon="eye" />
             </Button>
@@ -350,7 +350,7 @@ const InventoryHistory = () => {
               size="sm"
               title="Edit"
               className="btn-icon btn-icon-only"
-              onClick={() => history.push(`/operations/edit-inventory/${row.original._id}`)}
+              onClick={() => history.push(`/operations/inventory/edit/${row.original._id}`)}
             >
               <CsLineIcons icon="edit" />
             </Button>
@@ -428,7 +428,7 @@ const InventoryHistory = () => {
               size="sm"
               title="View"
               className="btn-icon btn-icon-only"
-              onClick={() => history.push(`/operations/inventory-details/${row.original._id}`)}
+              onClick={() => history.push(`/operations/inventory/details/${row.original._id}`)}
             >
               <CsLineIcons icon="eye" />
             </Button>

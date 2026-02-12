@@ -8,7 +8,6 @@ const User = require("../models/User");
  */
 const authenticate = async (req, res, next) => {
   try {
-    // Get token from header
     const token = req.header("Authorization")?.replace("Bearer ", "");
 
     if (!token) {
@@ -18,10 +17,8 @@ const authenticate = async (req, res, next) => {
       });
     }
 
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRETKEY);
 
-    // Find user
     const hotelAdmin = await HotelAdmin.findById(decoded._id);
 
     if (!hotelAdmin) {
@@ -31,7 +28,6 @@ const authenticate = async (req, res, next) => {
       });
     }
 
-    // Check if user is verified
     if (!hotelAdmin.is_verified) {
       return res.status(401).json({
         success: false,
@@ -39,7 +35,13 @@ const authenticate = async (req, res, next) => {
       });
     }
 
-    // Attach user info to request
+    if (!hotelAdmin.is_active) {
+      return res.status(401).json({
+        success: false,
+        message: "Your account has been deactivated. Please contact admin.",
+      });
+    }
+
     req.user = {
       _id: hotelAdmin._id,
       hotel_id: hotelAdmin.hotel_id,
@@ -47,6 +49,9 @@ const authenticate = async (req, res, next) => {
       role: hotelAdmin.role,
       permissions: hotelAdmin.permissions,
     };
+
+    // Attach the full hotelAdmin object for methods
+    req.hotelAdmin = hotelAdmin;
 
     next();
   } catch (error) {
@@ -88,7 +93,6 @@ const checkSubscription = async (req, res, next) => {
       });
     }
 
-    // Check if user is active
     if (user.status !== "active") {
       return res.status(403).json({
         success: false,
@@ -96,13 +100,11 @@ const checkSubscription = async (req, res, next) => {
       });
     }
 
-    // Check subscription expiry
     if (user.subscription_expiry) {
       const now = new Date();
       const expiryDate = new Date(user.subscription_expiry);
 
       if (now > expiryDate) {
-        // Check if within grace period (7 days)
         const gracePeriodEnd = new Date(expiryDate);
         gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 7);
 
@@ -115,7 +117,6 @@ const checkSubscription = async (req, res, next) => {
           });
         }
 
-        // Within grace period - allow but warn
         req.subscriptionWarning = {
           message: "Your subscription is in grace period. Please renew soon.",
           grace_period_ends: gracePeriodEnd,
@@ -123,7 +124,6 @@ const checkSubscription = async (req, res, next) => {
       }
     }
 
-    // Attach subscription info to request
     req.subscription = {
       subscription_id: user.subscription_id,
       subscription_expiry: user.subscription_expiry,
@@ -141,22 +141,75 @@ const checkSubscription = async (req, res, next) => {
 };
 
 /**
- * Permission middleware
- * Checks if user has required permission
+ * Granular permission middleware
+ * Checks if user has specific permission for a module and action
+ * @param {string} module - Permission module (e.g., 'manage_rooms')
+ * @param {string} action - Permission action (e.g., 'create', 'read', 'update', 'delete')
  */
-const checkPermission = (requiredPermission) => {
+const checkPermission = (module, action) => {
   return (req, res, next) => {
-    if (!req.user || !req.user.permissions) {
+    if (!req.user) {
       return res.status(403).json({
         success: false,
         message: "Access denied",
       });
     }
 
-    if (!req.user.permissions[requiredPermission]) {
+    // Admin has all permissions
+    if (req.user.role === "admin") {
+      return next();
+    }
+
+    // Check if user has the specific permission
+    if (
+      !req.user.permissions ||
+      !req.user.permissions[module] ||
+      !req.user.permissions[module][action]
+    ) {
       return res.status(403).json({
         success: false,
-        message: `You don't have permission to ${requiredPermission}`,
+        message: `You don't have permission to ${action} ${module.replace(
+          /_/g,
+          " "
+        )}`,
+      });
+    }
+
+    next();
+  };
+};
+
+/**
+ * Multiple permissions check (user needs at least one)
+ * Useful for endpoints that can be accessed with different permissions
+ */
+const checkAnyPermission = (...permissionChecks) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
+    // Admin has all permissions
+    if (req.user.role === "admin") {
+      return next();
+    }
+
+    // Check if user has any of the specified permissions
+    const hasPermission = permissionChecks.some(({ module, action }) => {
+      return (
+        req.user.permissions &&
+        req.user.permissions[module] &&
+        req.user.permissions[module][action]
+      );
+    });
+
+    if (!hasPermission) {
+      return res.status(403).json({
+        success: false,
+        message: "You don't have the required permissions to access this resource",
       });
     }
 
@@ -188,9 +241,24 @@ const checkRole = (...allowedRoles) => {
   };
 };
 
+/**
+ * Admin only middleware (shorthand)
+ */
+const adminOnly = (req, res, next) => {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({
+      success: false,
+      message: "This action is restricted to administrators only",
+    });
+  }
+  next();
+};
+
 module.exports = {
   authenticate,
   checkSubscription,
   checkPermission,
+  checkAnyPermission,
   checkRole,
+  adminOnly,
 };

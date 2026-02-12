@@ -52,7 +52,7 @@ const InventoryDetails = () => {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       toast.success('Inventory deleted successfully!');
-      history.push('/operations/inventory-history');
+      history.push('/operations/inventory/history');
     } catch (err) {
       console.error('Error deleting inventory:', err);
       toast.error('Failed to delete inventory. Please try again.');
@@ -81,7 +81,7 @@ const InventoryDetails = () => {
             <CsLineIcons icon="error" className="me-2" size={24} />
             {error}
             <div className="mt-3">
-              <Button variant="secondary" onClick={() => history.push('/operations/inventory-history')}>
+              <Button variant="secondary" onClick={() => history.push('/operations/inventory/history')}>
                 Back to Inventory
               </Button>
             </div>
@@ -247,7 +247,7 @@ const InventoryDetails = () => {
           <Card.Body>
             <Row>
               {inventory.bill_files.map((file, idx) => {
-                const fileUrl = `${process.env.REACT_APP_UPLOAD_DIR}${file}`;
+                const fileUrl = `${process.env.REACT_APP_API_URL}${file}`;
                 const isPdf = file.endsWith('.pdf');
                 return (
                   <Col key={idx} xs={12} md={3} className="text-center mb-3">
@@ -278,11 +278,11 @@ const InventoryDetails = () => {
 
       <Row>
         <Col className="text-end">
-          <Button variant="secondary" onClick={() => history.push('/operations/inventory-history')} className="me-2">
+          <Button variant="secondary" onClick={() => history.push('/operations/inventory/history')} className="me-2">
             <CsLineIcons icon="arrow-left" className="me-1" />
             Back
           </Button>
-          <Button variant="warning" onClick={() => history.push(`/operations/edit-inventory/${id}`)} className="me-2">
+          <Button variant="warning" onClick={() => history.push(`/operations/inventory/edit/${id}`)} className="me-2">
             <CsLineIcons icon="edit" className="me-1" />
             Edit
           </Button>

@@ -131,7 +131,7 @@ const AddInventory = () => {
         });
 
         toast.success('Inventory added successfully!');
-        history.push('/operations/inventory-history');
+        history.push('/operations/inventory/history');
       } catch (error) {
         console.error('Failed to add inventory:', error);
         toast.error(error.response?.data?.message || 'Add inventory failed.');

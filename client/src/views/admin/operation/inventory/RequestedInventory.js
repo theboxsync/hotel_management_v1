@@ -42,6 +42,9 @@ const RequestedInventory = () => {
   const [rejecting, setRejecting] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
+  const [deleteInventoryModal, setDeleteInventoryModal] = useState(false);
+  const [inventoryToDelete, setInventoryToDelete] = useState(null);
+
   // Use ref to prevent infinite loops
   const fetchRef = useRef(false);
 
@@ -171,6 +174,28 @@ const RequestedInventory = () => {
     }
   };
 
+  const deleteInventory = async () => {
+    if (!inventoryToDelete) return;
+
+    setLoading((prev) => ({ ...prev, deleting: true }));
+    try {
+      await axios.delete(`${process.env.REACT_APP_API}/inventory/delete/${inventoryToDelete._id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+
+      toast.success('Inventory request deleted successfully!');
+      setDeleteInventoryModal(false);
+      setInventoryToDelete(null);
+      fetchRef.current = true;
+      fetchRequestedInventory();
+    } catch (err) {
+      console.error('Error deleting inventory:', err);
+      toast.error(err.response?.data?.message || 'Failed to delete inventory.');
+    } finally {
+      setLoading((prev) => ({ ...prev, deleting: false }));
+    }
+  };
+
   const columns = React.useMemo(
     () => [
       {
@@ -210,7 +235,7 @@ const RequestedInventory = () => {
               title="Complete"
               as={Link}
               className="btn-icon btn-icon-only"
-              to={`/operations/complete-inventory/${row.original._id}`}
+              to={`/operations/inventory/complete/${row.original._id}`}
             >
               <CsLineIcons icon="check" />
             </Button>
@@ -225,6 +250,29 @@ const RequestedInventory = () => {
               }}
             >
               <CsLineIcons icon="close" />
+            </Button>
+            <Button
+              variant="outline-primary"
+              size="sm"
+              title="Edit"
+              as={Link}
+              className="btn-icon btn-icon-only"
+              to={`/operations/inventory/edit-request/${row.original._id}`}
+            >
+              <CsLineIcons icon="edit-square" />
+            </Button>
+            <Button
+              variant="outline-danger"
+              size="sm"
+              title="Delete"
+              className="btn-icon btn-icon-only"
+              onClick={() => {
+                setInventoryToDelete(row.original);
+                setDeleteInventoryModal(true);
+              }}
+              disabled={loading.deleting}
+            >
+              <CsLineIcons icon="bin" />
             </Button>
           </div>
         ),
@@ -396,7 +444,7 @@ const RequestedInventory = () => {
       >
         <Modal.Header closeButton>
           <Modal.Title>
-            Request Reject? 
+            Request Reject?
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -435,6 +483,36 @@ const RequestedInventory = () => {
               </>
             ) : (
               'Reject'
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Delete Inventory Modal */}
+      <Modal  show={deleteInventoryModal} onHide={() => setDeleteInventoryModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <CsLineIcons icon="warning" className="text-danger me-2" />
+            Delete Inventory Request?
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            Delete this requested inventory permanently?
+          </p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setDeleteInventoryModal(false)} disabled={loading.deleting}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={deleteInventory} disabled={loading.deleting} style={{ minWidth: '100px' }}>
+            {loading.deleting ? (
+              <>
+                <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                Deleting...
+              </>
+            ) : (
+              'Delete'
             )}
           </Button>
         </Modal.Footer>

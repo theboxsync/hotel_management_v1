@@ -239,7 +239,7 @@ const CompleteInventory = () => {
                 });
 
                 toast.success('Inventory completed successfully!');
-                history.push('/operations/requested-inventory');
+                history.push('/operations/inventory/requested');
               } catch (error) {
                 console.error('Submission failed:', error);
                 toast.error(error.response?.data?.message || 'Failed to complete request.');

@@ -83,6 +83,10 @@ const NavContent = () => {
             <i className="me-2 sw-3 d-inline-block" />
             <span className="align-middle">Add Inventory</span>
           </Nav.Link>
+          <Nav.Link as={NavLink} to="/operations/inventory/add-request" className="px-0 pt-1">
+            <i className="me-2 sw-3 d-inline-block" />
+            <span className="align-middle">Add Request Inventory</span>
+          </Nav.Link>
         </div>
       </div>
     </Nav>
@@ -122,6 +126,7 @@ const mobileNavItems = [
       { label: 'Requested Inventory', to: '/operations/inventory/requested' },
       { label: 'Inventory History', to: '/operations/inventory/history' },
       { label: 'Add Inventory', to: '/operations/inventory/add' },
+      { label: 'Add Request Inventory', to: '/operations/inventory/add-request' },
     ],
   },
 ];

@@ -11,6 +11,7 @@ const BookingRouter = require("./routes/Bookingroutes");
 const PaymentRouter = require("./routes/Paymentroutes");
 const InventoryRouter = require("./routes/Inventoryroutes");
 const StaffRouter = require("./routes/Staffroutes");
+const AnalyticsRouter = require("./routes/Analyticsroutes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,6 +44,7 @@ app.use("/api/bookings", BookingRouter);
 app.use("/api/payments", PaymentRouter);
 app.use("/api/inventory", InventoryRouter);
 app.use("/api/staff", StaffRouter);
+app.use("/api/analytics", AnalyticsRouter);
 
 // ============================================
 // ERROR HANDLING

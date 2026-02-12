@@ -2,10 +2,13 @@
 import { lazy } from 'react';
 import { DEFAULT_PATHS } from 'config.js';
 import withOperationsLayout from 'views/admin/operation/withOperationsLayout';
-import RequestedInventory from 'views/admin/operation/inventory/RequestedInventory';
+import CompleteInventory from 'views/admin/operation/inventory/CompleteInventory';
+import EditInventory from 'views/admin/operation/inventory/EditInventory';
+import InventoryDetails from 'views/admin/operation/inventory/InventoryDetails';
 
 const navItems = {
   dashboard: lazy(() => import('views/admin/Dashboard')),
+  dashboardAnalytics: lazy(() => import('views/admin/Dashboardanalytics')),
   staff: lazy(() => import('views/admin/staff/Staff')),
 };
 
@@ -22,6 +25,11 @@ const operation = {
   RequestedInventory: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/RequestedInventory'))),
   InventoryHistory: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/InventoryHistory'))),
   AddInventory: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/AddInventory'))),
+  AddRequestInventory: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/AddRequestInventory'))),
+  EditInventory: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/EditInventory'))),
+  EditRequestedInventory: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/EditRequestedInventory'))),
+  CompleteInventory: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/CompleteInventory'))),
+  InventoryDetails: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/InventoryDetails'))),
 };
 
 const appRoot = DEFAULT_PATHS.APP.endsWith('/') ? DEFAULT_PATHS.APP.slice(1, DEFAULT_PATHS.APP.length) : DEFAULT_PATHS.APP;
@@ -38,7 +46,7 @@ const allRoutes = {
       path: `${appRoot}/dashboard`,
       label: 'Dashboard',
       icon: 'home',
-      component: navItems.dashboard,
+      component: navItems.dashboardAnalytics,
     },
     {
       path: `${appRoot}/operations`,
@@ -144,6 +152,36 @@ const allRoutes = {
           label: 'Add Inventory',
           hideSub: true,
           component: operation.AddInventory,
+        },
+        {
+          path: '/inventory/add-request',
+          label: 'Add Request Inventory',
+          hideSub: true,
+          component: operation.AddRequestInventory,
+        },
+        {
+          path: '/inventory/edit/:id',
+          label: 'Edit Inventory',
+          hideSub: true,
+          component: operation.EditInventory,
+        },
+        {
+          path: '/inventory/edit-request/:id',
+          label: 'Edit Request Inventory',
+          hideSub: true,
+          component: operation.EditRequestedInventory,
+        },
+        {
+          path: '/inventory/complete/:id',
+          label: 'Complete Inventory',
+          hideSub: true,
+          component: operation.CompleteInventory,
+        },
+        {
+          path: '/inventory/details/:id',
+          label: 'Inventory Details',
+          hideSub: true,
+          component: operation.InventoryDetails,
         },
         {
           path: '/inventory',

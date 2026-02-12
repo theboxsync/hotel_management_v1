@@ -7,12 +7,17 @@ const {
   login,
   getProfile,
   logout,
-} = require("../controllers/Authcontroller");
-const { authenticate } = require("../middlewares/Authmiddleware");
+  createStaff,
+  updateStaffPermissions,
+  getAllStaff,
+  updateStaffStatus,
+  deleteStaff,
+} = require("../controllers/AuthController");
+const { authenticate, adminOnly } = require("../middlewares/AuthMiddleware");
 
 /**
  * @route   POST /api/auth/register
- * @desc    Register new hotel
+ * @desc    Register new hotel (Creates admin user)
  * @access  Public
  */
 AuthRouter.post("/register", registerHotel);
@@ -33,7 +38,7 @@ AuthRouter.post("/resend-otp", resendOTP);
 
 /**
  * @route   POST /api/auth/login
- * @desc    Login user
+ * @desc    Login user (admin, manager, or staff)
  * @access  Public
  */
 AuthRouter.post("/login", login);
@@ -51,5 +56,52 @@ AuthRouter.get("/profile", authenticate, getProfile);
  * @access  Private
  */
 AuthRouter.post("/logout", authenticate, logout);
+
+// ==================== Staff Management Routes (Admin Only) ====================
+
+/**
+ * @route   POST /api/auth/staff
+ * @desc    Create new staff member or manager
+ * @access  Private (Admin only)
+ */
+AuthRouter.post("/staff", authenticate, adminOnly, createStaff);
+
+/**
+ * @route   GET /api/auth/staff
+ * @desc    Get all staff members
+ * @access  Private (Admin only)
+ */
+AuthRouter.get("/staff", authenticate, adminOnly, getAllStaff);
+
+/**
+ * @route   PUT /api/auth/staff/:staffId/permissions
+ * @desc    Update staff member permissions
+ * @access  Private (Admin only)
+ */
+AuthRouter.put(
+  "/staff/:staffId/permissions",
+  authenticate,
+  adminOnly,
+  updateStaffPermissions
+);
+
+/**
+ * @route   PUT /api/auth/staff/:staffId/status
+ * @desc    Activate/deactivate staff member
+ * @access  Private (Admin only)
+ */
+AuthRouter.put(
+  "/staff/:staffId/status",
+  authenticate,
+  adminOnly,
+  updateStaffStatus
+);
+
+/**
+ * @route   DELETE /api/auth/staff/:staffId
+ * @desc    Delete staff member
+ * @access  Private (Admin only)
+ */
+AuthRouter.delete("/staff/:staffId", authenticate, adminOnly, deleteStaff);
 
 module.exports = AuthRouter;
