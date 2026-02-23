@@ -65,6 +65,23 @@ const NavContent = () => {
           </Nav.Link>
         </div>
       </div>
+
+      <div className="mb-2">
+        <Nav.Link as={NavLink} to="/operations/staff-panel/manage" className="px-0">
+          <CsLineIcons icon="list" className="me-2 sw-3" size="17" />
+          <span className="align-middle">Staff Panel</span>
+        </Nav.Link>
+        <div>
+          <Nav.Link as={NavLink} to="/operations/staff-panel/manage" className="px-0 pt-1">
+            <i className="me-2 sw-3 d-inline-block" />
+            <span className="align-middle">Manage Staff Panel</span>
+          </Nav.Link>
+          <Nav.Link as={NavLink} to="/operations/staff-panel/add" className="px-0 pt-1">
+            <i className="me-2 sw-3 d-inline-block" />
+            <span className="align-middle">Add Staff Panel</span>
+          </Nav.Link>
+        </div>
+      </div>
     </Nav>
   );
 };

@@ -558,6 +558,80 @@ const createStaff = async (req, res) => {
 };
 
 /**
+ * @desc    Update staff member (full update - name, email, role, permissions)
+ * @route   PUT /api/auth/staff/:staffId
+ * @access  Private (Admin only)
+ */
+const updateStaff = async (req, res) => {
+  try {
+    const { staffId } = req.params;
+    const { name, email, password, role, permissions } = req.body;
+
+    // Only admin can update staff
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can update staff members",
+      });
+    }
+
+    const staffMember = await HotelAdmin.findOne({
+      _id: staffId,
+      hotel_id: req.user.hotel_id,
+    });
+
+    if (!staffMember) {
+      return res.status(404).json({
+        success: false,
+        message: "Staff member not found",
+      });
+    }
+
+    // Cannot update admin
+    if (staffMember.role === "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Cannot update admin account",
+      });
+    }
+
+    // Update fields
+    if (name) staffMember.name = name;
+    if (role && ["manager", "staff"].includes(role)) staffMember.role = role;
+    if (permissions) staffMember.permissions = permissions;
+
+    // Only update password if provided
+    if (password && password.length >= 8) {
+      staffMember.password_hash = password; // Will be hashed by pre-save hook
+    }
+
+    // Note: Email updates are typically not allowed for security reasons
+    // If you want to allow email updates, add: if (email) staffMember.email = email;
+
+    await staffMember.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Staff member updated successfully",
+      data: {
+        id: staffMember._id,
+        name: staffMember.name,
+        email: staffMember.email,
+        role: staffMember.role,
+        permissions: staffMember.permissions,
+      },
+    });
+  } catch (error) {
+    console.error("Update staff error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating staff",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * @desc    Update staff permissions
  * @route   PUT /api/auth/staff/:staffId/permissions
  * @access  Private (Admin only)
@@ -773,6 +847,7 @@ module.exports = {
   getProfile,
   logout,
   createStaff,
+  updateStaff,
   updateStaffPermissions,
   getAllStaff,
   updateStaffStatus,

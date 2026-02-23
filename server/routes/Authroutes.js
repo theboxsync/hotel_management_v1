@@ -8,6 +8,7 @@ const {
   getProfile,
   logout,
   createStaff,
+  updateStaff,
   updateStaffPermissions,
   getAllStaff,
   updateStaffStatus,
@@ -65,6 +66,13 @@ AuthRouter.post("/logout", authenticate, logout);
  * @access  Private (Admin only)
  */
 AuthRouter.post("/staff", authenticate, adminOnly, createStaff);
+
+/**
+ * @route   PUT /api/auth/staff/:staffId
+ * @desc    Update staff member details (name, email, role)
+ * @access  Private (Admin only)
+ */
+AuthRouter.put("/staff/:staffId", authenticate, adminOnly, updateStaff);
 
 /**
  * @route   GET /api/auth/staff

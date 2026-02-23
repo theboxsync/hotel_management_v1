@@ -2,14 +2,13 @@
 import { lazy } from 'react';
 import { DEFAULT_PATHS } from 'config.js';
 import withOperationsLayout from 'views/admin/operation/withOperationsLayout';
-import CompleteInventory from 'views/admin/operation/inventory/CompleteInventory';
-import EditInventory from 'views/admin/operation/inventory/EditInventory';
-import InventoryDetails from 'views/admin/operation/inventory/InventoryDetails';
+import AdminProfile from 'views/admin/AdminProfile';
 
 const navItems = {
   dashboard: lazy(() => import('views/admin/Dashboard')),
   dashboardAnalytics: lazy(() => import('views/admin/Dashboardanalytics')),
   staff: lazy(() => import('views/admin/staff/Staff')),
+  AdminProfile: lazy(() => import('views/admin/AdminProfile')),
 };
 
 const operation = {
@@ -30,6 +29,8 @@ const operation = {
   EditRequestedInventory: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/EditRequestedInventory'))),
   CompleteInventory: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/CompleteInventory'))),
   InventoryDetails: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/InventoryDetails'))),
+  StaffManagement: withOperationsLayout(lazy(() => import('views/admin/operation/StaffPanel/Staffmanagement'))),
+  AddEditStaff: withOperationsLayout(lazy(() => import('views/admin/operation/StaffPanel/AddEditStaffPanel'))),
 };
 
 const appRoot = DEFAULT_PATHS.APP.endsWith('/') ? DEFAULT_PATHS.APP.slice(1, DEFAULT_PATHS.APP.length) : DEFAULT_PATHS.APP;
@@ -47,6 +48,13 @@ const allRoutes = {
       label: 'Dashboard',
       icon: 'home',
       component: navItems.dashboardAnalytics,
+    },
+
+    {
+      path: `${appRoot}/profile`,
+      label: 'Admin Profile',
+      icon: 'user',
+      component: navItems.AdminProfile,
     },
     {
       path: `${appRoot}/operations`,
@@ -190,6 +198,31 @@ const allRoutes = {
           redirect: true,
           to: '/operations/inventory/requested',
         },
+        {
+          path: '/staff-panel/manage',
+          label: 'Manage Staff Panel',
+          hideSub: true,
+          component: operation.StaffManagement,
+        },
+        {
+          path: '/staff-panel/add',
+          label: 'Add Staff Panel',
+          hideSub: true,
+          component: operation.AddEditStaff,
+        },
+        {
+          path: '/staff-panel/edit/:id',
+          label: 'Edit Staff Panel',
+          hideSub: true,
+          component: operation.AddEditStaff,
+        },
+        {
+          path: '/staff-panel',
+          label: 'Staff Management',
+          hideSub: true,
+          redirect: true,
+          to: '/operations/staff-panel/manage',
+        }
       ],
     },
     {

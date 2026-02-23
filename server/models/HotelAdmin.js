@@ -63,16 +63,17 @@ const HotelAdminSchema = new Schema({
 });
 
 // Pre-save middleware to hash password
-HotelAdminSchema.pre("save", async function (next) {
-  // Update the updated_at timestamp
-  this.updated_at = Date.now();
+HotelAdminSchema.pre("save", async function () {
+  try {
+    this.updated_at = Date.now();
 
-  // Only hash if password changed
-  if (!this.isModified("password_hash")) return next();
+    if (!this.isModified("password_hash")) return;
 
-  const salt = await bcrypt.genSalt(10);
-  this.password_hash = await bcrypt.hash(this.password_hash, salt);
-  next();
+    const salt = await bcrypt.genSalt(10);
+    this.password_hash = await bcrypt.hash(this.password_hash, salt);
+  } catch (error) {
+    throw error;
+  }
 });
 
 // Method to generate auth token

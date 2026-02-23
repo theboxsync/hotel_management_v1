@@ -307,7 +307,7 @@ const DashboardAnalytics = () => {
                                     <div className="border rounded p-3">
                                         <div className="d-flex justify-content-between align-items-start mb-2">
                                             <small className="text-muted">Channel Performance</small>
-                                            <CsLineIcons icon="trending-up" className="text-primary" size="18" />
+                                            <CsLineIcons icon="trend-up" className="text-primary" size="18" />
                                         </div>
                                         <h4 className="mb-0">
                                             {analytics.keyMetrics.channelPerformance}%
