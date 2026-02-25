@@ -54,6 +54,7 @@ const allRoutes = {
       path: `${appRoot}/profile`,
       label: 'Admin Profile',
       icon: 'user',
+      hideInMenu: true,
       component: navItems.AdminProfile,
     },
     {
