@@ -5,17 +5,24 @@ import { Link } from 'react-router-dom';
 
 const NavUserMenu = () => {
   const { isLogin } = useSelector((state) => state.auth);
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
 
-  if (!isLogin || !currentUser) {
+  if (!isLogin || !user) {
     return <></>;
   }
 
   return (
-    <Link to="/settings/profile" className="user-container d-flex">
-      <div className="d-flex user position-relative">
-        <img className="profile" alt={currentUser?.namne || 'Restaurant'} src={process.env.REACT_APP_UPLOAD_DIR + currentUser?.logo} />
-        <div className="name">{currentUser?.name || 'Restaurant'}</div>
+    <Link to="/profile" className="user-container d-flex">
+      <div
+        className="sw-5 sh-5 rounded-xl d-flex justify-content-center align-items-center mx-auto"
+        style={{
+          backgroundColor: '#e3f2fd',
+          fontSize: '1.5rem',
+          fontWeight: 'bold',
+          color: '#1976d2',
+        }}
+      >
+        {user?.name.charAt(0).toUpperCase()}
       </div>
     </Link>
   );
