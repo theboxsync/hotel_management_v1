@@ -7,10 +7,10 @@ import { toast } from 'react-toastify';
 import CsLineIcons from 'cs-line-icons/CsLineIcons';
 import HtmlHead from 'components/html-head/HtmlHead';
 import BreadcrumbList from 'components/breadcrumb-list/BreadcrumbList';
-import ControlsSearch from './components/ControlsSearch';
-import ControlsPageSize from './components/ControlsPageSize';
-import Table from './components/Table';
-import TablePagination from './components/TablePagination';
+import ControlsSearch from 'components/table/ControlsSearch';
+import ControlsPageSize from 'components/table/ControlsPageSize';
+import Table from 'components/table/Table';
+import TablePagination from 'components/table/TablePagination';
 
 const RequestedInventory = () => {
   const title = 'Requested Inventory';

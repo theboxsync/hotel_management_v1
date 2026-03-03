@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import React from 'react';
 
 const Table = ({ tableInstance, className = 'react-table boxed' }) => {
-  const { getTableProps, headerGroups, page, getTableBodyProps, prepareRow } = tableInstance;
+  const { getTableProps, headerGroups, rows, getTableBodyProps, prepareRow } = tableInstance;
 
   return (
     <>
@@ -14,7 +14,7 @@ const Table = ({ tableInstance, className = 'react-table boxed' }) => {
                 return (
                   <th
                     key={`th.${index}`}
-                    {...column.getHeaderProps(column.getSortByToggleProps())}
+                    {...column.getHeaderProps()}
                     className={classNames(column.headerClassName, {
                       sorting_desc: column.isSortedDesc,
                       sorting_asc: column.isSorted && !column.isSortedDesc,
@@ -29,16 +29,13 @@ const Table = ({ tableInstance, className = 'react-table boxed' }) => {
           ))}
         </thead>
         <tbody {...getTableBodyProps()}>
-          {page.map((row, i) => {
+          {rows.map((row, i) => {
             prepareRow(row);
 
             return (
               <tr key={`tr.${i}`} {...row.getRowProps()} className={classNames({ selected: row.isSelected })}>
                 {row.cells.map((cell, cellIndex) => (
-                  <td
-                    key={`td.${cellIndex}`}
-                    {...cell.getCellProps()}
-                  >
+                  <td key={`td.${cellIndex}`} {...cell.getCellProps()}>
                     {cell.render('Cell')}
                   </td>
                 ))}
