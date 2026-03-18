@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { authAPI } from 'services/api';
-import { active } from 'sortablejs';
 
 const AuthContext = createContext(null);
 
@@ -34,6 +33,7 @@ export const AuthProvider = ({ children }) => {
 
             return { success: true };
         } catch (error) {
+            console.log('Login error:', error);
             return {
                 success: false,
                 message: error.response?.data?.message || 'Login failed',
