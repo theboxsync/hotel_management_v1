@@ -1,10 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { Button, Row, Col, Card } from 'react-bootstrap';
-import { Switch, Route, Redirect, useHistory } from 'react-router-dom';
-import axios from 'axios';
-import Glide from 'components/carousel/Glide';
-
-import { useAuth } from 'contexts/AuthContext';
+import React from 'react';
+import { Switch, Route, Redirect } from 'react-router-dom';
+import PermissionGate from 'components/auth/PermissionGate';
 import ViewStaff from './ViewStaff';
 import AddStaff from './AddStaff';
 import EditStaff from './EditStaff';
@@ -12,58 +8,84 @@ import StaffProfile from './StaffProfile';
 import ManageAttendance from './attandance/ManageAttendance';
 import ViewAttendance from './attandance/ViewAttendance';
 
-const Staff = () => {
-  const { activePlans } = useAuth();
-  return (
-    <>
-      <Switch>
-        <Route exact path="/staff" render={() => <Redirect to="/staff/view" />} />
-        <Route exact path="/staff/view" render={() => (<>
-          {
-            activePlans.includes("Staff Management") ?
-              <ViewStaff /> :
-              <div className="text-center">You need to buy or renew to Staff Management plan to access this page.</div>
-          }
-        </>)} />
-        <Route exact path="/staff/add" render={() => <>
-          {
-            activePlans.includes("Staff Management") ?
-              <AddStaff /> :
-              <div className="text-center">You need to buy or renew to Staff Management plan to access this page.</div>
-          }
-        </>} />
-        <Route exact path="/staff/edit/:id" render={() => <>
-          {
-            activePlans.includes("Staff Management") ?
-              <EditStaff /> :
-              <div className="text-center">You need to buy or renew to Staff Management plan to access this page.</div>
-          }
-        </>} />
-        <Route exact path="/staff/profile/:id" render={() => <>
-          {
-            activePlans.includes("Staff Management") ?
-              <StaffProfile /> :
-              <div className="text-center">You need to buy or renew to Staff Management plan to access this page.</div>
-          }
-        </>} />
-        <Route exact path="/staff/attendance" render={() => <>
-          {
-            activePlans.includes("Staff Management") && activePlans.includes("Payroll By The Box") ?
-              <ManageAttendance /> :
-              <div className="text-center">You need to buy or renew to Staff Management and Payroll By The Box plan to access this page.</div>
-          }
-        </>} />
-        <Route exact path="/staff/attendance/view/:id" render={() => <>
-          {
-            activePlans.includes("Staff Management") && activePlans.includes("Payroll By The Box") ?
-              <ViewAttendance /> :
-              <div className="text-center">You need to buy or renew to Staff Management and Payroll By The Box plan to access this page.</div>
-          }
-        </>} />
+/**
+ * Staff module
+ *
+ * All routes are gated using PermissionGate:
+ *   - List/view pages require `manage_staff` module (any read access)
+ *   - Add page requires `manage_staff.create`
+ *   - Edit page requires `manage_staff.update`
+ *   - Delete actions inside ViewStaff should also use PermissionGate or `can('manage_staff','delete')`
+ */
+const Staff = () => (
+  <Switch>
+    <Route exact path="/staff" render={() => <Redirect to="/staff/view" />} />
 
-      </Switch>
-    </>
-  );
-};
+    {/* View — requires any read access to manage_staff */}
+    <Route
+      exact
+      path="/staff/view"
+      render={() => (
+        <PermissionGate module="manage_staff" action="read">
+          <ViewStaff />
+        </PermissionGate>
+      )}
+    />
+
+    {/* Add — requires create */}
+    <Route
+      exact
+      path="/staff/add"
+      render={() => (
+        <PermissionGate module="manage_staff" action="create" redirect="/staff/view">
+          <AddStaff />
+        </PermissionGate>
+      )}
+    />
+
+    {/* Edit — requires update */}
+    <Route
+      exact
+      path="/staff/edit/:id"
+      render={() => (
+        <PermissionGate module="manage_staff" action="update" redirect="/staff/view">
+          <EditStaff />
+        </PermissionGate>
+      )}
+    />
+
+    {/* Profile — requires read */}
+    <Route
+      exact
+      path="/staff/profile/:id"
+      render={() => (
+        <PermissionGate module="manage_staff" action="read">
+          <StaffProfile />
+        </PermissionGate>
+      )}
+    />
+
+    {/* Attendance — requires read on manage_staff */}
+    <Route
+      exact
+      path="/staff/attendance"
+      render={() => (
+        <PermissionGate module="manage_staff" action="read">
+          <ManageAttendance />
+        </PermissionGate>
+      )}
+    />
+
+    <Route
+      exact
+      path="/staff/attendance/view/:id"
+      render={() => (
+        <PermissionGate module="manage_staff" action="read">
+          <ViewAttendance />
+        </PermissionGate>
+      )}
+    />
+  </Switch>
+);
 
 export default Staff;

@@ -6,187 +6,181 @@ import CsLineIcons from 'cs-line-icons/CsLineIcons';
 import useCustomLayout from 'hooks/useCustomLayout';
 import { useWindowSize } from 'hooks/useWindowSize';
 import { NavLink } from 'react-router-dom';
+import usePermission from 'hooks/usePermission';
 
-const NavContent = () => {
+/* ─────────────────────────────────────────────────────────────────────────────
+   NavSection — only renders if the user has ANY permission in `module`.
+   Children are individual Nav.Link items which can also be gated.
+───────────────────────────────────────────────────────────────────────────── */
+const NavSection = ({ module, icon, label, to, children }) => {
+  const { canAny } = usePermission();
+  if (!canAny(module)) return null;
+
   return (
-    <Nav className="flex-column">
-      <div className="mb-2">
-        <Nav.Link as={NavLink} to="/operations/bookings" className="px-0">
-          <CsLineIcons icon="handbag" className="me-2 sw-3" size="17" />
-          <span className="align-middle">Bookings</span>
-        </Nav.Link>
-        <div>
-          <Nav.Link as={NavLink} to="/operations/bookings" className="px-0 pt-1">
-            <i className="me-2 sw-3 d-inline-block" />
-            <span className="align-middle">All Bookings</span>
-          </Nav.Link>
-          <Nav.Link as={NavLink} to="/operations/new-booking" className="px-0 pt-1">
-            <i className="me-2 sw-3 d-inline-block" />
-            <span className="align-middle">New Booking</span>
-          </Nav.Link>
-          <Nav.Link as={NavLink} to="/operations/check-in-out" className="px-0 pt-1">
-            <i className="me-2 sw-3 d-inline-block" />
-            <span className="align-middle">Check-In/Out</span>
-          </Nav.Link>
-        </div>
-      </div>
-
-      <div className="mb-2">
-        <Nav.Link as={NavLink} to="/operations/room-categories" className="px-0">
-          <CsLineIcons icon="list" className="me-2 sw-3" size="17" />
-          <span className="align-middle">Room Categories</span>
-        </Nav.Link>
-        <div>
-          <Nav.Link as={NavLink} to="/operations/room-categories/manage" className="px-0 pt-1">
-            <i className="me-2 sw-3 d-inline-block" />
-            <span className="align-middle">Manage Room Categories</span>
-          </Nav.Link>
-          <Nav.Link as={NavLink} to="/operations/room-categories/add" className="px-0 pt-1">
-            <i className="me-2 sw-3 d-inline-block" />
-            <span className="align-middle">Add Room Category</span>
-          </Nav.Link>
-        </div>
-      </div>
-
-      <div className="mb-2">
-        <Nav.Link as={NavLink} to="/operations/rooms" className="px-0">
-          <CsLineIcons icon="list" className="me-2 sw-3" size="17" />
-          <span className="align-middle">Rooms</span>
-        </Nav.Link>
-        <div>
-          <Nav.Link as={NavLink} to="/operations/rooms/manage" className="px-0 pt-1">
-            <i className="me-2 sw-3 d-inline-block" />
-            <span className="align-middle">Manage Rooms</span>
-          </Nav.Link>
-          <Nav.Link as={NavLink} to="/operations/rooms/add" className="px-0 pt-1">
-            <i className="me-2 sw-3 d-inline-block" />
-            <span className="align-middle">Add Room</span>
-          </Nav.Link>
-        </div>
-      </div>
-
-      <div className="mb-2">
-        <Nav.Link as={NavLink} to="/operations/inventory/requested" className="px-0">
-          <CsLineIcons icon="boxes" className="me-2 sw-3" size="17" />
-          <span className="align-middle">Inventory</span>
-        </Nav.Link>
-        <div>
-          <Nav.Link as={NavLink} to="/operations/inventory/requested" className="px-0 pt-1">
-            <i className="me-2 sw-3 d-inline-block" />
-            <span className="align-middle">Requested Inventory</span>
-          </Nav.Link>
-          <Nav.Link as={NavLink} to="/operations/inventory/history" className="px-0 pt-1">
-            <i className="me-2 sw-3 d-inline-block" />
-            <span className="align-middle">Inventory History</span>
-          </Nav.Link>
-          <Nav.Link as={NavLink} to="/operations/inventory/add" className="px-0 pt-1">
-            <i className="me-2 sw-3 d-inline-block" />
-            <span className="align-middle">Add Inventory</span>
-          </Nav.Link>
-          <Nav.Link as={NavLink} to="/operations/inventory/add-request" className="px-0 pt-1">
-            <i className="me-2 sw-3 d-inline-block" />
-            <span className="align-middle">Add Request Inventory</span>
-          </Nav.Link>
-        </div>
-      </div>
-
-      <div className="mb-2">
-        <Nav.Link as={NavLink} to="/operations/staff-panel" className="px-0">
-          <CsLineIcons icon="list" className="me-2 sw-3" size="17" />
-          <span className="align-middle">Staff Panel</span>
-        </Nav.Link>
-        <div>
-          <Nav.Link as={NavLink} to="/operations/staff-panel/manage" className="px-0 pt-1">
-            <i className="me-2 sw-3 d-inline-block" />
-            <span className="align-middle">Manage Staff Panel</span>
-          </Nav.Link>
-          <Nav.Link as={NavLink} to="/operations/staff-panel/add" className="px-0 pt-1">
-            <i className="me-2 sw-3 d-inline-block" />
-            <span className="align-middle">Add Staff Panel</span>
-          </Nav.Link>
-        </div>
-      </div>
-    </Nav>
-  );
-};
-
-const mobileNavItems = [
-  {
-    label: 'Bookings',
-    icon: 'handbag',
-    items: [
-      { label: 'Bookings', to: '/operations/bookings' },
-      { label: 'New Booking', to: '/operations/new-booking' },
-      { label: 'Check-In/Out', to: '/operations/check-in-out' },
-    ],
-  },
-  {
-    label: 'Room Categories',
-    icon: 'main-course',
-    items: [
-      { label: 'Manage Room Categories', to: '/operations/room-categories/manage' },
-      { label: 'Add Room Category', to: '/operations/room-categories/add' },
-    ],
-  },
-  {
-    label: 'Rooms',
-    icon: 'main-course',
-    items: [
-      { label: 'Manage Rooms', to: '/operations/rooms/manage' },
-      { label: 'Add Room', to: '/operations/rooms/add' },
-    ],
-  },
-  {
-    label: 'Inventory',
-    icon: 'boxes',
-    items: [
-      { label: 'Requested Inventory', to: '/operations/inventory/requested' },
-      { label: 'Inventory History', to: '/operations/inventory/history' },
-      { label: 'Add Inventory', to: '/operations/inventory/add' },
-      { label: 'Add Request Inventory', to: '/operations/inventory/add-request' },
-    ],
-  },
-  {
-    label: 'Staff Management',
-    icon: 'list',
-    items: [
-      { label: 'Manage Staff Panel', to: '/operations/staff-panel' },
-      { label: 'Add Staff Panel', to: '/operations/staff-panel/add' },
-    ],
-  },
-];
-
-const MobileNavbar = () => {
-  return (
-    <div className="d-flex gap-2 overflow-auto pb-2">
-      {mobileNavItems.map((nav) => (
-        <Dropdown key={nav.label} container="body" className="position-static">
-          <Dropdown.Toggle variant="outline-primary" size="sm" className="d-flex align-items-center gap-1">
-            <CsLineIcons icon={nav.icon} size="16" />
-            {nav.label}
-          </Dropdown.Toggle>
-
-          <Dropdown.Menu
-            style={{
-              position: 'absolute',
-              minWidth: '150px',
-              maxHeight: '300px',
-              overflowY: 'auto',
-              marginTop: '5px',
-            }}
-          >
-            {nav.items.map((item) => (
-              <Dropdown.Item as={NavLink} key={item.to} to={item.to}>
-                {item.label}
-              </Dropdown.Item>
-            ))}
-          </Dropdown.Menu>
-        </Dropdown>
-      ))}
+    <div className="mb-2">
+      <Nav.Link as={NavLink} to={to} className="px-0">
+        <CsLineIcons icon={icon} className="me-2 sw-3" size="17" />
+        <span className="align-middle">{label}</span>
+      </Nav.Link>
+      <div>{children}</div>
     </div>
   );
 };
 
+/* Single sub-link gated by a specific action */
+const NavItem = ({ module, action, to, label }) => {
+  const { can } = usePermission();
+  if (!can(module, action)) return null;
+
+  return (
+    <Nav.Link as={NavLink} to={to} className="px-0 pt-1">
+      <i className="me-2 sw-3 d-inline-block" />
+      <span className="align-middle">{label}</span>
+    </Nav.Link>
+  );
+};
+
+/* Sub-link that only requires the module to have ANY access (e.g. list/view pages) */
+const NavItemAny = ({ module, to, label }) => {
+  const { canAny } = usePermission();
+  if (!canAny(module)) return null;
+
+  return (
+    <Nav.Link as={NavLink} to={to} className="px-0 pt-1">
+      <i className="me-2 sw-3 d-inline-block" />
+      <span className="align-middle">{label}</span>
+    </Nav.Link>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Desktop sidebar nav
+───────────────────────────────────────────────────────────────────────────── */
+const NavContent = () => (
+  <Nav className="flex-column">
+
+    {/* Bookings — shown if user can read bookings */}
+    <NavSection module="manage_bookings" icon="handbag" label="Bookings" to="/operations/bookings">
+      <NavItemAny module="manage_bookings" to="/operations/bookings" label="All Bookings" />
+      <NavItem module="manage_bookings" action="create" to="/operations/new-booking" label="New Booking" />
+      <NavItemAny module="manage_bookings" to="/operations/check-in-out" label="Check-In/Out" />
+    </NavSection>
+
+    {/* Room Categories */}
+    <NavSection module="manage_rooms" icon="list" label="Room Categories" to="/operations/room-categories">
+      <NavItemAny module="manage_rooms" to="/operations/room-categories/manage" label="Manage Room Categories" />
+      <NavItem module="manage_rooms" action="create" to="/operations/room-categories/add" label="Add Room Category" />
+    </NavSection>
+
+    {/* Rooms */}
+    <NavSection module="manage_rooms" icon="list" label="Rooms" to="/operations/rooms">
+      <NavItemAny module="manage_rooms" to="/operations/rooms/manage" label="Manage Rooms" />
+      <NavItem module="manage_rooms" action="create" to="/operations/rooms/add" label="Add Room" />
+    </NavSection>
+
+    {/* Inventory */}
+    <NavSection module="manage_inventory" icon="boxes" label="Inventory" to="/operations/inventory/requested">
+      <NavItemAny module="manage_inventory" to="/operations/inventory/requested" label="Requested Inventory" />
+      <NavItemAny module="manage_inventory" to="/operations/inventory/history" label="Inventory History" />
+      <NavItem module="manage_inventory" action="create" to="/operations/inventory/add" label="Add Inventory" />
+      <NavItem module="manage_inventory" action="request" to="/operations/inventory/add-request" label="Add Request Inventory" />
+    </NavSection>
+
+    {/* Staff Panel */}
+    <NavSection module="manage_staff" icon="users" label="Staff Panel" to="/operations/staff-panel">
+      <NavItemAny module="manage_staff" to="/operations/staff-panel/manage" label="Manage Staff Panel" />
+      <NavItem module="manage_staff" action="create" to="/operations/staff-panel/add" label="Add Staff" />
+    </NavSection>
+
+  </Nav>
+);
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Mobile navbar — dropdown per section, gated the same way
+───────────────────────────────────────────────────────────────────────────── */
+const MobileNavSection = ({ module, icon, label, items }) => {
+  const { canAny, can } = usePermission();
+  if (!canAny(module)) return null;
+
+  // Filter items by their required action (if specified)
+  const visibleItems = items.filter(item =>
+    item.action ? can(module, item.action) : canAny(module)
+  );
+  if (!visibleItems.length) return null;
+
+  return (
+    <Dropdown container="body" className="position-static">
+      <Dropdown.Toggle variant="outline-primary" size="sm" className="d-flex align-items-center gap-1">
+        <CsLineIcons icon={icon} size="16" />
+        {label}
+      </Dropdown.Toggle>
+      <Dropdown.Menu style={{ minWidth: 150, maxHeight: 300, overflowY: 'auto', marginTop: 5 }}>
+        {visibleItems.map(item => (
+          <Dropdown.Item as={NavLink} key={item.to} to={item.to}>
+            {item.label}
+          </Dropdown.Item>
+        ))}
+      </Dropdown.Menu>
+    </Dropdown>
+  );
+};
+
+const MobileNavbar = () => (
+  <div className="d-flex gap-2 overflow-auto pb-2">
+    <MobileNavSection
+      module="manage_bookings"
+      icon="handbag"
+      label="Bookings"
+      items={[
+        { label: 'All Bookings', to: '/operations/bookings' },
+        { label: 'New Booking', to: '/operations/new-booking', action: 'create' },
+        { label: 'Check-In/Out', to: '/operations/check-in-out' },
+      ]}
+    />
+    <MobileNavSection
+      module="manage_rooms"
+      icon="list"
+      label="Room Categories"
+      items={[
+        { label: 'Manage Room Categories', to: '/operations/room-categories/manage' },
+        { label: 'Add Room Category', to: '/operations/room-categories/add', action: 'create' },
+      ]}
+    />
+    <MobileNavSection
+      module="manage_rooms"
+      icon="list"
+      label="Rooms"
+      items={[
+        { label: 'Manage Rooms', to: '/operations/rooms/manage' },
+        { label: 'Add Room', to: '/operations/rooms/add', action: 'create' },
+      ]}
+    />
+    <MobileNavSection
+      module="manage_inventory"
+      icon="boxes"
+      label="Inventory"
+      items={[
+        { label: 'Requested Inventory', to: '/operations/inventory/requested' },
+        { label: 'Inventory History', to: '/operations/inventory/history' },
+        { label: 'Add Inventory', to: '/operations/inventory/add', action: 'create' },
+        { label: 'Add Request Inventory', to: '/operations/inventory/add-request', action: 'create' },
+      ]}
+    />
+    <MobileNavSection
+      module="manage_staff"
+      icon="users"
+      label="Staff Panel"
+      items={[
+        { label: 'Manage Staff Panel', to: '/operations/staff-panel/manage' },
+        { label: 'Add Staff', to: '/operations/staff-panel/add', action: 'create' },
+      ]}
+    />
+  </div>
+);
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   HOC
+───────────────────────────────────────────────────────────────────────────── */
 const withOperationsLayout = (WrappedComponent) => {
   return (props) => {
     useCustomLayout({ layout: LAYOUT.Boxed });
@@ -196,15 +190,12 @@ const withOperationsLayout = (WrappedComponent) => {
 
     return (
       <div className="position-relative">
-        {/* Mobile Navbar */}
         {width && width < lgBreakpoint && (
           <div className="position-absolute top-0 start-0 end-0 d-lg-none">
             <MobileNavbar />
           </div>
         )}
-
         <Row>
-          {/* Desktop Sidebar */}
           {width && width >= lgBreakpoint ? (
             <Col xs="auto" className="d-none d-lg-flex">
               <div className="nav flex-column sw-25 mt-2">
@@ -214,8 +205,6 @@ const withOperationsLayout = (WrappedComponent) => {
           ) : (
             <div className="pt-7" />
           )}
-
-          {/* Main Content */}
           <Col>
             <WrappedComponent {...props} />
           </Col>

@@ -119,6 +119,15 @@ const registerHotel = async (req, res) => {
           update: true,
           delete: true,
         },
+        manage_inventory: {
+          read: true,
+          request: false,
+          update_request: false,
+          delete_request: false,
+          create: true,
+          update: true,
+          delete: true
+        },
       },
       is_verified: false,
     });

@@ -53,6 +53,15 @@ const HotelAdminSchema = new Schema({
       update: { type: Boolean, default: false },
       delete: { type: Boolean, default: false },
     },
+    manage_inventory: {
+      read: { type: Boolean, default: false },
+      request: { type: Boolean, default: false },
+      update_request: { type: Boolean, default: false },
+      delete_request: { type: Boolean, default: false },
+      create: { type: Boolean, default: false },
+      update: { type: Boolean, default: false },
+      delete: { type: Boolean, default: false },
+    },
   },
   last_login: { type: Date },
   is_verified: { type: Boolean, default: false },
@@ -109,6 +118,12 @@ HotelAdminSchema.methods.getEffectivePermissions = function () {
       manage_settings: { hotel_info: true, pricing: true, integrations: true },
       manage_payments: { view: true, refund: true },
       manage_customers: {
+        read: true,
+        create: true,
+        update: true,
+        delete: true,
+      },
+      manage_inventory: {
         read: true,
         create: true,
         update: true,

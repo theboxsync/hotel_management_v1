@@ -16,7 +16,7 @@ const {
   checkSubscription,
   checkPermission,
 } = require("../middlewares/Authmiddleware");
-const {  uploadInventoryImage } = require("../middlewares/Upload");
+const { uploadInventoryImage } = require("../middlewares/Upload");
 
 const InventoryRouter = express.Router();
 
@@ -35,7 +35,7 @@ InventoryRouter
 InventoryRouter
   .route("/get-suggestions")
   .get(getInventorySuggestions);
-InventoryRouter.route("/add").post( uploadInventoryImage.array("bill_files"), addInventory);
+InventoryRouter.route("/add").post(uploadInventoryImage.array("bill_files"), addInventory);
 InventoryRouter
   .route("/add-request")
   .post(addInventoryRequest);
@@ -44,10 +44,10 @@ InventoryRouter
   .delete(deleteInventory);
 InventoryRouter
   .route("/update/:id")
-  .put( uploadInventoryImage.array("bill_files"), updateInventory);
+  .put(uploadInventoryImage.array("bill_files"), updateInventory);
 InventoryRouter
   .route("/complete-request")
-  .post(checkPermission("manage_inventory"),  uploadInventoryImage.array("bill_files"), completeInventoryRequest);
+  .post(checkPermission("manage_inventory"), uploadInventoryImage.array("bill_files"), completeInventoryRequest);
 InventoryRouter
   .route("/reject-request/:id")
   .post(checkPermission("manage_inventory"), rejectInventoryRequest);

@@ -29,9 +29,9 @@ const AddEditStaffPanel = () => {
     const description = isEdit ? 'Update staff member details and permissions' : 'Create a new staff member with custom permissions';
     const breadcrumbs = [
         { to: '', text: 'Home' },
-        { to: 'dashboard', text: 'Dashboard' },
-        { to: 'dashboard/staff-management', text: 'Staff Management' },
-        { to: isEdit ? `dashboard/staff-management/edit/${id}` : 'dashboard/staff-management/add', text: title },
+        { to: 'operations', text: 'Operations' },
+        { to: 'operations/staff-panel', text: 'Staff Management' },
+        { to: isEdit ? `operations/staff-panel/edit/${id}` : 'operations/staff-panel/add', text: title },
     ];
 
     const [loading, setLoading] = useState(false);
@@ -114,6 +114,20 @@ const AddEditStaffPanel = () => {
                 { key: 'delete', label: 'Delete Customers', description: 'Remove guest accounts' },
             ],
         },
+        manage_inventory: {
+            label: 'Manage Inventory',
+            icon: 'boxes',
+            description: 'Manage inventory and stock levels',
+            actions: [
+                { key: 'read', label: 'View Inventory', description: 'Access inventory information' },
+                { key: 'request', label: 'Request Inventory', description: 'Make inventory requests' },
+                { key: 'update_request', label: 'Update Requests', description: 'Modify inventory requests' },
+                { key: 'delete_request', label: 'Delete Requests', description: 'Remove inventory requests' },
+                { key: 'create', label: 'Add Inventory', description: 'Add new items to inventory' },
+                { key: 'update', label: 'Update Inventory', description: 'Modify inventory details' },
+                { key: 'delete', label: 'Delete Inventory', description: 'Remove items from inventory' },
+            ]
+        },
     };
 
     // Permission presets
@@ -129,6 +143,7 @@ const AddEditStaffPanel = () => {
                 manage_settings: { hotel_info: true, pricing: true, integrations: false },
                 manage_payments: { view: true, refund: true },
                 manage_customers: { read: true, create: true, update: true, delete: true },
+                manage_inventory: { read: true, request: true, update_request: true, delete_request: true, create: false, update: false, delete: false },
             },
         },
         front_desk: {
@@ -142,6 +157,7 @@ const AddEditStaffPanel = () => {
                 manage_settings: { hotel_info: false, pricing: false, integrations: false },
                 manage_payments: { view: false, refund: false },
                 manage_customers: { read: true, create: true, update: true, delete: false },
+                manage_inventory: { read: false, request: false, update_request: false, delete_request: false, create: false, update: false, delete: false },
             },
         },
         housekeeping: {
@@ -155,6 +171,7 @@ const AddEditStaffPanel = () => {
                 manage_settings: { hotel_info: false, pricing: false, integrations: false },
                 manage_payments: { view: false, refund: false },
                 manage_customers: { read: true, create: false, update: false, delete: false },
+                manage_inventory: { read: false, request: false, update_request: false, delete_request: false, create: false, update: false, delete: false },
             },
         },
         accountant: {
@@ -168,6 +185,7 @@ const AddEditStaffPanel = () => {
                 manage_settings: { hotel_info: false, pricing: true, integrations: false },
                 manage_payments: { view: true, refund: true },
                 manage_customers: { read: true, create: false, update: false, delete: false },
+                manage_inventory: { read: false, request: false, update_request: false, delete_request: false, create: false, update: false, delete: false },
             },
         },
         view_only: {
@@ -181,6 +199,7 @@ const AddEditStaffPanel = () => {
                 manage_settings: { hotel_info: false, pricing: false, integrations: false },
                 manage_payments: { view: false, refund: false },
                 manage_customers: { read: true, create: false, update: false, delete: false },
+                manage_inventory: { read: true, request: false, update_request: false, delete_request: false, create: false, update: false, delete: false },
             },
         },
     };
@@ -278,12 +297,12 @@ const AddEditStaffPanel = () => {
                 setPermissions(staff.permissions);
             } else {
                 toast.error('Staff member not found');
-                history.push('/dashboard/staff-management');
+                history.push('/operations/staff-panel');
             }
         } catch (error) {
             console.error('Error fetching staff data:', error);
             toast.error('Failed to load staff data');
-            history.push('/dashboard/staff-management');
+            history.push('/operations/staff-panel');
         } finally {
             setLoading(false);
         }
@@ -364,7 +383,7 @@ const AddEditStaffPanel = () => {
                         <BreadcrumbList items={breadcrumbs} />
                     </Col>
                     <Col md="5" className="d-flex align-items-start justify-content-end">
-                        <Button variant="outline-primary" size="sm" onClick={() => history.push('/dashboard/staff-management')} className="btn-icon btn-icon-start">
+                        <Button variant="outline-primary" size="sm" onClick={() => history.push('/operations/staff-panel')} className="btn-icon btn-icon-start">
                             <CsLineIcons icon="arrow-left" />
                             <span>Back to Staff List</span>
                         </Button>
@@ -572,7 +591,7 @@ const AddEditStaffPanel = () => {
                                             </>
                                         )}
                                     </Button>
-                                    <Button variant="outline-secondary" onClick={() => history.push('/dashboard/staff-management')} disabled={isSubmitting}>
+                                    <Button variant="outline-secondary" onClick={() => history.push('/operations/staff-panel')} disabled={isSubmitting}>
                                         <CsLineIcons icon="close" className="me-2" />
                                         Cancel
                                     </Button>

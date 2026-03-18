@@ -1,4 +1,5 @@
 const Inventory = require("../models/Inventory");
+const HotelAdmin = require("../models/HotelAdmin");
 const Notification = require("../models/Notification");
 
 const getInventoryData = async (req, res) => {
@@ -7,6 +8,11 @@ const getInventoryData = async (req, res) => {
     const { page = 1, limit = 20 } = req.query;
     const pageNumber = parseInt(page, 10) || 1;
     const pageSize = parseInt(limit, 10) || 20;
+
+    const hotel = await HotelAdmin.findById(userId).select("hotel_id").lean();
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
 
     const projection = {
       request_date: 1,
@@ -24,13 +30,13 @@ const getInventoryData = async (req, res) => {
     };
 
     const [data, total] = await Promise.all([
-      Inventory.find({ user_id: userId })
+      Inventory.find({ user_id: hotel.hotel_id })
         .select(projection)
         .sort({ request_date: -1 })
         .skip((pageNumber - 1) * pageSize)
         .limit(pageSize)
         .lean(),
-      Inventory.countDocuments({ user_id: userId }),
+      Inventory.countDocuments({ user_id: hotel.hotel_id }),
     ]);
 
     res.json({
@@ -66,7 +72,12 @@ const getInventoryDataByStatus = async (req, res) => {
     const pageNumber = parseInt(page, 10) || 1;
     const pageSize = parseInt(limit, 10) || 20;
 
-    const query = { user_id: userId, status };
+    const hotel = await HotelAdmin.findById(userId).select("hotel_id").lean();
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
+
+    const query = { user_id: hotel.hotel_id, status };
 
     // NEW: Request Date Range Filter
     if (request_from || request_to) {
@@ -161,7 +172,12 @@ const getInventoryDataById = async (req, res) => {
     const { id } = req.params;
     const userId = req.user._id;
 
-    const data = await Inventory.findOne({ _id: id, user_id: userId }).lean();
+    const hotel = await HotelAdmin.findById(userId).select("hotel_id").lean();
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
+
+    const data = await Inventory.findOne({ _id: id, user_id: hotel.hotel_id }).lean();
 
     if (!data) {
       return res.status(404).json({ success: false, message: "Not found" });
@@ -191,10 +207,15 @@ const getInventorySuggestions = async (req, res) => {
     const tasks = {};
     const promises = [];
 
+    const hotel = await HotelAdmin.findById(userId).select("hotel_id").lean();
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
+
     if (typeList.includes("vendor")) {
       promises.push(
         Inventory.distinct("vendor_name", {
-          user_id: userId,
+          user_id: hotel.hotel_id,
           vendor_name: { $nin: [null, ""] },
         }).then((data) => (tasks.vendors = data.sort()))
       );
@@ -203,7 +224,7 @@ const getInventorySuggestions = async (req, res) => {
     if (typeList.includes("category")) {
       promises.push(
         Inventory.distinct("category", {
-          user_id: userId,
+          user_id: hotel.hotel_id,
           category: { $nin: [null, ""] },
         }).then((data) => (tasks.categories = data.sort()))
       );
@@ -212,7 +233,7 @@ const getInventorySuggestions = async (req, res) => {
     if (typeList.includes("item")) {
       promises.push(
         Inventory.distinct("items.item_name", {
-          user_id: userId,
+          user_id: hotel.hotel_id,
           "items.item_name": { $nin: [null, ""] },
         }).then((data) => (tasks.items = data.sort()))
       );
@@ -246,9 +267,14 @@ const addInventory = async (req, res) => {
       }
     }
 
+    const hotel = await HotelAdmin.findById(userId).select("hotel_id").lean();
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
+
     const inventoryData = {
       ...req.body,
-      user_id: userId,
+      user_id: hotel.hotel_id,
       bill_files: fileNames,
       items,
       // Ensure numeric fields are properly converted
@@ -273,6 +299,11 @@ const addInventoryRequest = async (req, res) => {
     let { items, ...rest } = req.body;
     const user = req.user._id;
 
+    const hotel = await HotelAdmin.findById(user).select("hotel_id").lean();
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
+
     if (typeof items === "string") {
       try {
         items = JSON.parse(items);
@@ -284,35 +315,35 @@ const addInventoryRequest = async (req, res) => {
 
     const inventoryData = {
       ...rest,
-      user_id: user._id || user,
+      user_id: hotel.hotel_id,
       items,
       status: "Requested",
     };
 
     const data = await Inventory.create(inventoryData);
 
-    const io = req.app.get("io");
-    const connectedUsers = req.app.get("connectedUsers");
+    // const io = req.app.get("io");
+    // const connectedUsers = req.app.get("connectedUsers");
 
-    const adminKey = `${user._id}_Admin`; // or however you store admin socket
-    if (io && connectedUsers && connectedUsers[adminKey]) {
-      const notification = await Notification.create({
-        restaurant_id: user._id,
-        sender: "Manager",
-        receiver: "Admin",
-        type: "new_inventory_request",
-        data: {
-          _id: data._id,
-          category: data.category,
-          total_amount: data.total_amount,
-          request_date: data.request_date,
-        },
-      });
-      io.to(connectedUsers[adminKey]).emit(
-        "new_inventory_request",
-        notification
-      );
-    }
+    // const adminKey = `${user._id}_Admin`; // or however you store admin socket
+    // if (io && connectedUsers && connectedUsers[adminKey]) {
+    //   const notification = await Notification.create({
+    //     restaurant_id: user._id,
+    //     sender: "Manager",
+    //     receiver: "Admin",
+    //     type: "new_inventory_request",
+    //     data: {
+    //       _id: data._id,
+    //       category: data.category,
+    //       total_amount: data.total_amount,
+    //       request_date: data.request_date,
+    //     },
+    //   });
+    //   io.to(connectedUsers[adminKey]).emit(
+    //     "new_inventory_request",
+    //     notification
+    //   );
+    // }
 
     res.json({ success: true, data });
   } catch (error) {
@@ -366,8 +397,13 @@ const updateInventory = async (req, res) => {
       }
     });
 
+    const hotel = await HotelAdmin.findById(userId).select("hotel_id").lean();
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
+
     const updatedInventory = await Inventory.findOneAndUpdate(
-      { _id: id, user_id: userId },
+      { _id: id, user_id: hotel.hotel_id },
       safeUpdate,
       { new: true, runValidators: true }
     );
@@ -396,9 +432,14 @@ const deleteInventory = async (req, res) => {
     const inventoryId = req.params.id;
     const userId = req.user._id;
 
+    const hotel = await HotelAdmin.findById(userId).select("hotel_id").lean();
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
+
     const result = await Inventory.deleteOne({
       _id: inventoryId,
-      user_id: userId,
+      user_id: hotel.hotel_id,
     });
 
     if (result.deletedCount === 0) {
@@ -492,8 +533,12 @@ const rejectInventoryRequest = async (req, res) => {
   const { reject_reason } = req.body;
 
   try {
+    const hotel = await HotelAdmin.findById(userId).select("hotel_id").lean();
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
     const inventory = await Inventory.findOneAndUpdate(
-      { _id: id, user_id: userId },
+      { _id: id, user_id: hotel.hotel_id },
       { status: "Rejected", reject_reason },
       { new: true }
     );

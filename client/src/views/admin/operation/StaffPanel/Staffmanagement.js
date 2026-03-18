@@ -18,8 +18,8 @@ const StaffManagement = () => {
     const description = 'Create and manage hotel staff with custom permissions';
     const breadcrumbs = [
         { to: '', text: 'Home' },
-        { to: 'dashboard', text: 'Dashboard' },
-        { to: 'dashboard/staff-management', text: 'Staff Management' },
+        { to: 'operations', text: 'Operations' },
+        { to: 'operations/staff-panel', text: 'Staff Management' },
     ];
 
     const history = useHistory();
@@ -327,7 +327,7 @@ const StaffManagement = () => {
                     <Col md="5" className="d-flex align-items-start justify-content-end">
                         <Button
                             variant="primary"
-                            onClick={() => history.push('/dashboard/staff-management/add')}
+                            onClick={() => history.push('/operations/staff-panel/add')}
                         >
                             <CsLineIcons icon="plus" className="me-2" />
                             Add New Staff
@@ -451,7 +451,7 @@ const StaffManagement = () => {
                                             : 'Try adjusting your search or filters to find what you\'re looking for.'}
                                     </p>
                                     {staffList.length === 0 ? (
-                                        <Button variant="primary" onClick={() => history.push('/dashboard/staff-management/add')}>
+                                        <Button variant="primary" onClick={() => history.push('/operations/staff-panel/add')}>
                                             <CsLineIcons icon="plus" className="me-2" />
                                             Add First Staff Member
                                         </Button>

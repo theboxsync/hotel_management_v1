@@ -1,16 +1,49 @@
 import React, { useState } from 'react';
 import { useHistory, Link } from 'react-router-dom';
+import { Button, Form } from 'react-bootstrap';
+import * as Yup from 'yup';
+import { useFormik } from 'formik';
 import { toast } from 'react-toastify';
 import { useAuth } from 'contexts/AuthContext';
 import LayoutFullpage from 'layout/LayoutFullpage';
 import HtmlHead from 'components/html-head/HtmlHead';
+import CsLineIcons from 'cs-line-icons/CsLineIcons';
 
 const Register = () => {
   const title = 'Register';
   const description = 'Register Page';
 
   const [step, setStep] = useState(1); // 1: Register, 2: Verify
-  const [formData, setFormData] = useState({
+  const [otp, setOtp] = useState('');
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const { register, verifyEmail } = useAuth();
+  const history = useHistory();
+
+  // Registration Form Validation Schema
+  const registerValidationSchema = Yup.object().shape({
+    hotel_name: Yup.string().required('Hotel name is required'),
+    owner_name: Yup.string().required('Owner name is required'),
+    email: Yup.string().email('Invalid email format').required('Email is required'),
+    phone: Yup.string().required('Phone number is required'),
+    address: Yup.string().required('Hotel address is required'),
+    password: Yup.string()
+      .min(8, 'Password must be at least 8 characters')
+      .required('Password is required'),
+    confirm_password: Yup.string()
+      .oneOf([Yup.ref('password'), null], 'Passwords must match')
+      .required('Confirm password is required'),
+  });
+
+  // OTP Verification Validation Schema
+  const otpValidationSchema = Yup.object().shape({
+    otp: Yup.string()
+      .length(6, 'OTP must be 6 digits')
+      .matches(/^[0-9]+$/, 'OTP must contain only numbers')
+      .required('OTP is required'),
+  });
+
+  // Registration Form Initial Values
+  const registerInitialValues = {
     hotel_name: '',
     owner_name: '',
     email: '',
@@ -18,38 +51,22 @@ const Register = () => {
     address: '',
     password: '',
     confirm_password: '',
-  });
-  const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { register, verifyEmail } = useAuth();
-  const history = useHistory();
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
   };
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
+  // OTP Form Initial Values
+  const otpInitialValues = {
+    otp: '',
+  };
 
-    // Validation
-    if (formData.password !== formData.confirm_password) {
-      toast.error('Passwords do not match');
-      return;
-    }
+  // Formik instances
 
-    if (formData.password.length < 8) {
-      toast.error('Password must be at least 8 characters');
-      return;
-    }
+  // Registration Form Submission
+  const onRegisterSubmit = async (values, { setSubmitting }) => {
+    // Validation is handled by Formik/Yup
 
-    setLoading(true);
-
+    setSubmitting(true);
     try {
-      const result = await register(formData);
-
+      const result = await register(values);
       if (result.success) {
         toast.success('Registration successful! Please check your email for OTP');
         setStep(2);
@@ -59,17 +76,22 @@ const Register = () => {
     } catch (error) {
       toast.error('An error occurred during registration');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const handleVerify = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  const registerFormik = useFormik({
+    initialValues: registerInitialValues,
+    validationSchema: registerValidationSchema,
+    onSubmit: onRegisterSubmit,
+  });
+  // OTP Verification Submission
+  const onOtpSubmit = async (values, { setSubmitting }) => {
+    setVerifyLoading(true);
+    setSubmitting(true);
 
     try {
-      const result = await verifyEmail(formData.email, otp);
-
+      const result = await verifyEmail(registerFormik.values.email, values.otp);
       if (result.success) {
         toast.success('Email verified successfully! Please login');
         history.push('/login');
@@ -79,159 +101,249 @@ const Register = () => {
     } catch (error) {
       toast.error('An error occurred during verification');
     } finally {
-      setLoading(false);
+      setVerifyLoading(false);
+      setSubmitting(false);
     }
   };
 
+  const otpFormik = useFormik({
+    initialValues: otpInitialValues,
+    validationSchema: otpValidationSchema,
+    onSubmit: onOtpSubmit,
+  });
+
+  // Left Side Content (same as Login)
   const leftSide = (
     <div className="min-h-100 d-flex align-items-center">
       <div className="w-100 w-lg-75 w-xxl-50">
-        {/* <div>
-          <div className="mb-5">
-            <h1 className="display-3 text-white">Multiple Niches</h1>
-            <h1 className="display-3 text-white">Ready for Your Project</h1>
-          </div>
-          <p className="h6 text-white lh-1-5 mb-5">
-            Dynamically target high-payoff intellectual capital for customized technologies. Objectively integrate emerging core competencies before
-            process-centric communities...
-          </p>
-          <div className="mb-5">
-            <Button size="lg" variant="outline-white" href="/">
-              Learn More
-            </Button>
-          </div>
-        </div> */}
+        <div />
       </div>
     </div>
   );
 
+  // Registration Form
+  const registrationForm = (
+    <Form
+      id="registerForm"
+      className="tooltip-end-bottom"
+      onSubmit={registerFormik.handleSubmit}
+    >
+      {/* Hotel Name */}
+      <div className="mb-3 filled form-group tooltip-end-top">
+        <CsLineIcons icon="building" />
+        <Form.Control
+          type="text"
+          name="hotel_name"
+          placeholder="Hotel Name"
+          value={registerFormik.values.hotel_name}
+          onChange={registerFormik.handleChange}
+          onBlur={registerFormik.handleBlur}
+          className="border"
+        />
+        {registerFormik.errors.hotel_name && registerFormik.touched.hotel_name && (
+          <div className="d-block invalid-tooltip">{registerFormik.errors.hotel_name}</div>
+        )}
+      </div>
+
+      {/* Owner Name */}
+      <div className="mb-3 filled form-group tooltip-end-top">
+        <CsLineIcons icon="user" />
+        <Form.Control
+          type="text"
+          name="owner_name"
+          placeholder="Owner Name"
+          value={registerFormik.values.owner_name}
+          onChange={registerFormik.handleChange}
+          onBlur={registerFormik.handleBlur}
+          className="border"
+        />
+        {registerFormik.errors.owner_name && registerFormik.touched.owner_name && (
+          <div className="d-block invalid-tooltip">{registerFormik.errors.owner_name}</div>
+        )}
+      </div>
+
+      {/* Email */}
+      <div className="mb-3 filled form-group tooltip-end-top">
+        <CsLineIcons icon="email" />
+        <Form.Control
+          type="email"
+          name="email"
+          placeholder="Email Address"
+          value={registerFormik.values.email}
+          onChange={registerFormik.handleChange}
+          onBlur={registerFormik.handleBlur}
+          className="border"
+        />
+        {registerFormik.errors.email && registerFormik.touched.email && (
+          <div className="d-block invalid-tooltip">{registerFormik.errors.email}</div>
+        )}
+      </div>
+
+      {/* Phone */}
+      <div className="mb-3 filled form-group tooltip-end-top">
+        <CsLineIcons icon="phone" />
+        <Form.Control
+          type="tel"
+          name="phone"
+          placeholder="Phone Number"
+          value={registerFormik.values.phone}
+          onChange={registerFormik.handleChange}
+          onBlur={registerFormik.handleBlur}
+          className="border"
+        />
+        {registerFormik.errors.phone && registerFormik.touched.phone && (
+          <div className="d-block invalid-tooltip">{registerFormik.errors.phone}</div>
+        )}
+      </div>
+
+      {/* Address */}
+      <div className="mb-3 filled form-group tooltip-end-top">
+        <CsLineIcons icon="pin" />
+        <Form.Control
+          as="textarea"
+          rows="3"
+          name="address"
+          placeholder="Hotel Address"
+          value={registerFormik.values.address}
+          onChange={registerFormik.handleChange}
+          onBlur={registerFormik.handleBlur}
+          className="border"
+        />
+        {registerFormik.errors.address && registerFormik.touched.address && (
+          <div className="d-block invalid-tooltip">{registerFormik.errors.address}</div>
+        )}
+      </div>
+
+      {/* Password */}
+      <div className="mb-3 filled form-group tooltip-end-top">
+        <CsLineIcons icon="lock-off" />
+        <Form.Control
+          type="password"
+          name="password"
+          placeholder="Password (min. 8 characters)"
+          value={registerFormik.values.password}
+          onChange={registerFormik.handleChange}
+          onBlur={registerFormik.handleBlur}
+          className="border"
+        />
+        {registerFormik.errors.password && registerFormik.touched.password && (
+          <div className="d-block invalid-tooltip">{registerFormik.errors.password}</div>
+        )}
+      </div>
+
+      {/* Confirm Password */}
+      <div className="mb-3 filled form-group tooltip-end-top">
+        <CsLineIcons icon="lock-on" />
+        <Form.Control
+          type="password"
+          name="confirm_password"
+          placeholder="Confirm Password"
+          value={registerFormik.values.confirm_password}
+          onChange={registerFormik.handleChange}
+          onBlur={registerFormik.handleBlur}
+          className="border"
+        />
+        {registerFormik.errors.confirm_password && registerFormik.touched.confirm_password && (
+          <div className="d-block invalid-tooltip">{registerFormik.errors.confirm_password}</div>
+        )}
+      </div>
+
+      {/* Submit Button */}
+      <Button
+        size="lg"
+        type="submit"
+        disabled={registerFormik.isSubmitting}
+        className="mt-2"
+      >
+        {registerFormik.isSubmitting ? 'Registering...' : 'Register Hotel'}
+      </Button>
+    </Form>
+  );
+
+  // OTP Verification Form
+  const otpForm = (
+    <Form
+      id="otpForm"
+      className="tooltip-end-bottom"
+      onSubmit={otpFormik.handleSubmit}
+    >
+      <div className="verification-info mb-4 text-center">
+        <p className="mb-2">We've sent a 6-digit OTP to:</p>
+        <p className="h5 text-primary mb-2">{registerFormik.values.email}</p>
+        <p className="text-muted small">Note: Check your console for OTP (email not configured)</p>
+      </div>
+
+      {/* OTP Input */}
+      <div className="mb-4 filled form-group tooltip-end-top">
+        <CsLineIcons icon="password" />
+        <Form.Control
+          type="text"
+          name="otp"
+          placeholder="Enter 6-digit OTP"
+          value={otpFormik.values.otp}
+          onChange={otpFormik.handleChange}
+          onBlur={otpFormik.handleBlur}
+          maxLength="6"
+          className="border"
+        />
+        {otpFormik.errors.otp && otpFormik.touched.otp && (
+          <div className="d-block invalid-tooltip">{otpFormik.errors.otp}</div>
+        )}
+      </div>
+
+      {/* Buttons */}
+      <div className="d-flex gap-3">
+        <Button
+          size="lg"
+          type="submit"
+          disabled={otpFormik.isSubmitting || verifyLoading}
+          className="flex-grow-1"
+        >
+          {otpFormik.isSubmitting || verifyLoading ? 'Verifying...' : 'Verify Email'}
+        </Button>
+
+        <Button
+          size="lg"
+          variant="outline-secondary"
+          type="button"
+          onClick={() => setStep(1)}
+          disabled={otpFormik.isSubmitting || verifyLoading}
+        >
+          Back
+        </Button>
+      </div>
+    </Form>
+  );
+
+  // Right Side
   const rightSide = (
     <div className="sw-lg-70 min-h-100 bg-foreground d-flex justify-content-center align-items-center shadow-deep py-5 full-page-content-right-border">
-      <div className="auth-container">
-        <div className="auth-card">
-          <div className="auth-header">
-            <h1>Hotel Management System</h1>
-            <h2>{step === 1 ? 'Register Your Hotel' : 'Verify Email'}</h2>
-          </div>
+      <div className="sw-lg-50 px-5">
+        <div className="mb-3">
+          <h2 className="cta-1 mb-0 text-primary">
+            {step === 1 ? 'Hotel Registration' : 'Email Verification'}
+          </h2>
+        </div>
+        <div className="mb-3">
+          <p className="h6">
+            {step === 1
+              ? 'Register your hotel to get started.'
+              : 'Please verify your email address to continue.'}
+          </p>
+        </div>
 
-          {step === 1 ? (
-            <form onSubmit={handleRegister} className="auth-form">
-              <div className="form-group">
-                <label htmlFor="hotel_name">Hotel Name *</label>
-                <input
-                  type="text"
-                  id="hotel_name"
-                  name="hotel_name"
-                  value={formData.hotel_name}
-                  onChange={handleChange}
-                  required
-                  placeholder="Enter hotel name"
-                />
-              </div>
+        {step === 1 ? registrationForm : otpForm}
 
-              <div className="form-group">
-                <label htmlFor="owner_name">Owner Name *</label>
-                <input
-                  type="text"
-                  id="owner_name"
-                  name="owner_name"
-                  value={formData.owner_name}
-                  onChange={handleChange}
-                  required
-                  placeholder="Enter owner name"
-                />
-              </div>
+        <div className="auth-footer mt-4">
+          <p>
+            Already have an account? <Link to="/login">Login here</Link>
+          </p>
+        </div>
 
-              <div className="form-group">
-                <label htmlFor="email">Email Address *</label>
-                <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required placeholder="Enter email address" />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="phone">Phone Number *</label>
-                <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} required placeholder="+1234567890" />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="address">Hotel Address *</label>
-                <textarea
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  required
-                  placeholder="Enter complete hotel address"
-                  rows="3"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="password">Password *</label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  placeholder="Minimum 8 characters"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="confirm_password">Confirm Password *</label>
-                <input
-                  type="password"
-                  id="confirm_password"
-                  name="confirm_password"
-                  value={formData.confirm_password}
-                  onChange={handleChange}
-                  required
-                  placeholder="Re-enter password"
-                />
-              </div>
-
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? 'Registering...' : 'Register'}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleVerify} className="auth-form">
-              <div className="verification-info">
-                <p>We've sent a 6-digit OTP to:</p>
-                <p className="email-display">{formData.email}</p>
-                <p className="note">Note: Check your console for OTP (email not configured)</p>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="otp">Enter OTP *</label>
-                <input
-                  type="text"
-                  id="otp"
-                  name="otp"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  required
-                  placeholder="Enter 6-digit OTP"
-                  maxLength="6"
-                />
-              </div>
-
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? 'Verifying...' : 'Verify Email'}
-              </button>
-
-              <button type="button" className="btn btn-secondary" onClick={() => setStep(1)}>
-                Back to Registration
-              </button>
-            </form>
-          )}
-
-          <div className="auth-footer">
-            <p>
-              Already have an account? <Link to="/login">Login here</Link>
-            </p>
-          </div>
+        <div className="mt-auto text-center pt-4">
+          <p className="mb-0 text-muted" style={{ fontSize: '12px' }}>
+            Powered by <strong>TheBoxSync</strong>
+          </p>
         </div>
       </div>
     </div>

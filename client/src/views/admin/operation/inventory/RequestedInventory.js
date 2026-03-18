@@ -85,6 +85,7 @@ const RequestedInventory = () => {
       });
 
       if (res.data.success) {
+        console.log('Raw API Response:', res.data);
         const requestedInventory = res.data.data.map((item) => ({
           ...item,
           request_date_obj: new Date(item.request_date),
