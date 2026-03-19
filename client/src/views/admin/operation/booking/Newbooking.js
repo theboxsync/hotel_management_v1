@@ -90,6 +90,9 @@ const NewBooking = () => {
 
   const [guestDistribution, setGuestDistribution] = useState({});
 
+  // Extra bed state: { [roomId]: { enabled: bool, cost: number } }
+  const [extraBed, setExtraBed] = useState({});
+
   // Room filters
   const [roomSearch, setRoomSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
@@ -111,16 +114,6 @@ const NewBooking = () => {
 
   const handleSearchChange = (e) => setSearchData({ ...searchData, [e.target.name]: e.target.value });
   const handleGuestChange = (e) => setGuestData({ ...guestData, [e.target.name]: e.target.value });
-
-
-  const handleBack = () => step > 1 ? setStep(step - 1) : history.push('/operations/bookings');
-
-  const getCategoryName = (id) => categories.find(c => c._id === id)?.category_name || 'Unknown';
-  const getCategoryMaxOccupancy = (id) => categories.find(c => c._id === id)?.max_occupancy || 0;
-  const isRoomSelected = (id) => !!selectedRooms.find(r => r._id === id);
-
-  const STEPS = ['Select Room(s)', 'Guest Details', 'Confirmation'];
-  const cur = process.env.REACT_APP_CURRENCY;
 
   const handleSearchRooms = async (e) => {
     e.preventDefault();
@@ -168,10 +161,29 @@ const NewBooking = () => {
       const d = { ...guestDistribution };
       delete d[room._id];
       setGuestDistribution(d);
+      const eb = { ...extraBed };
+      delete eb[room._id];
+      setExtraBed(eb);
     } else {
       setSelectedRooms([...selectedRooms, room]);
       setGuestDistribution({ ...guestDistribution, [room._id]: 1 });
+      setExtraBed({ ...extraBed, [room._id]: { enabled: false, cost: '' } });
     }
+  };
+
+  const handleExtraBedToggle = (roomId, enabled) => {
+    setExtraBed(prev => ({ ...prev, [roomId]: { ...prev[roomId], enabled, cost: enabled ? prev[roomId]?.cost || '' : '' } }));
+  };
+
+  const handleExtraBedCostChange = (roomId, cost) => {
+    setExtraBed(prev => ({ ...prev, [roomId]: { ...prev[roomId], cost } }));
+  };
+
+  const getExtraBedTotal = (roomId) => {
+    const eb = extraBed[roomId];
+    if (!eb?.enabled) return 0;
+    const room = selectedRooms.find(r => r._id === roomId);
+    return (parseFloat(eb.cost) || 0) * (room?.nights || 0);
   };
 
   const handleGuestDistributionChange = (roomId, value) => {
@@ -184,9 +196,20 @@ const NewBooking = () => {
     return s + (cat?.max_occupancy || 2);
   }, 0);
   const getTotalPrice = () => selectedRooms.reduce((s, r) => s + (r.estimatedTotal || 0), 0);
+  const getTotalExtraBedCost = () => selectedRooms.reduce((s, r) => s + getExtraBedTotal(r._id), 0);
+  const getGrandTotal = () => getTotalPrice() + getTotalExtraBedCost();
 
   // Derived: unique floors from available rooms (sorted)
   const availableFloors = [...new Set(availableRooms.map(r => r.floor))].sort((a, b) => a - b);
+
+  const handleBack = () => step > 1 ? setStep(step - 1) : history.push('/operations/bookings');
+
+  const getCategoryName = (id) => categories.find(c => c._id === id)?.category_name || 'Unknown';
+  const getCategoryMaxOccupancy = (id) => categories.find(c => c._id === id)?.max_occupancy || 0;
+  const isRoomSelected = (id) => !!selectedRooms.find(r => r._id === id);
+
+  const STEPS = ['Select Room(s)', 'Guest Details', 'Confirmation'];
+  const cur = process.env.REACT_APP_CURRENCY;
 
   // Filtered rooms based on search + filters
   const filteredRooms = availableRooms.filter(room => {
@@ -222,6 +245,8 @@ const NewBooking = () => {
       room_breakdown: selectedRooms.map(room => ({
         room_id: room._id,
         guests_in_room: guestDistribution[room._id] || 0,
+        extra_bed: extraBed[room._id]?.enabled || false,
+        extra_bed_cost: parseFloat(extraBed[room._id]?.cost) || 0,
       })),
       check_in_date: searchData.check_in_date,
       check_out_date: searchData.check_out_date,
@@ -360,7 +385,7 @@ const NewBooking = () => {
                       </span>
                     </div>
                     <div className="d-flex align-items-center gap-3">
-                      <span className="fw-bold text-primary">{cur} {getTotalPrice().toFixed(2)}</span>
+                      <span className="fw-bold text-primary">{cur} {getGrandTotal().toFixed(2)}</span>
                       <Button variant="primary" size="sm" onClick={handleContinueToGuestDetails} style={{ borderRadius: 8, whiteSpace: 'nowrap' }}>
                         Continue →
                       </Button>
@@ -483,6 +508,9 @@ const NewBooking = () => {
                       {filteredRooms.map((room) => {
                         const selected = isRoomSelected(room._id);
                         const maxOccupancy = getCategoryMaxOccupancy(room.category_id);
+                        const category = categories.find(c => c._id === room.category_id);
+                        const isExtraBedAllowed = !!category?.is_extra_bed_allowed;
+                        const extraBedState = extraBed[room._id] || { enabled: false, cost: '' };
                         return (
                           <Col key={room._id} xs={12} sm={6} xl={4}>
                             <div style={S.roomCard(selected)} className="p-3 h-100 d-flex flex-column">
@@ -547,6 +575,64 @@ const NewBooking = () => {
                                 </div>
                               )}
 
+                              {/* Extra Bed (only shown when selected & category allows it) */}
+                              {selected && isExtraBedAllowed && (
+                                <div className="mb-3">
+                                  <div
+                                    style={{
+                                      borderRadius: 10,
+                                      border: extraBedState.enabled
+                                        ? '1.5px solid rgba(var(--primary-rgb),.35)'
+                                        : '1.5px solid var(--separator)',
+                                      background: extraBedState.enabled
+                                        ? 'rgba(var(--primary-rgb),.04)'
+                                        : 'transparent',
+                                      padding: '10px 12px',
+                                      transition: 'all .2s',
+                                    }}
+                                  >
+                                    <Form.Check
+                                      type="checkbox"
+                                      id={`extra-bed-${room._id}`}
+                                      checked={extraBedState.enabled}
+                                      onChange={e => handleExtraBedToggle(room._id, e.target.checked)}
+                                      label={
+                                        <span style={{ fontSize: 13, fontWeight: 600 }}>
+                                          Add Extra Bed
+                                          <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--muted)', marginLeft: 6 }}>
+                                            (allowed for this room type)
+                                          </span>
+                                        </span>
+                                      }
+                                    />
+                                    {extraBedState.enabled && (
+                                      <div className="mt-2">
+                                        <div style={S.sectionLabel}>Extra Bed Cost per night ({cur})</div>
+                                        <InputGroup size="sm" style={{ maxWidth: 180 }}>
+                                          <InputGroup.Text style={{ borderRadius: '8px 0 0 8px', fontSize: 12 }}>
+                                            {cur}
+                                          </InputGroup.Text>
+                                          <Form.Control
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            value={extraBedState.cost}
+                                            onChange={e => handleExtraBedCostChange(room._id, e.target.value)}
+                                            style={{ borderRadius: '0 8px 8px 0' }}
+                                          />
+                                        </InputGroup>
+                                        {extraBedState.cost > 0 && room.nights && (
+                                          <div style={{ fontSize: 11, color: 'var(--primary)', marginTop: 4, fontWeight: 600 }}>
+                                            +{cur} {(parseFloat(extraBedState.cost) * room.nights).toFixed(2)} total for {room.nights} night{room.nights > 1 ? 's' : ''}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
                               {/* Pricing */}
                               <div className="mt-auto pt-2 border-top d-flex justify-content-between align-items-end">
                                 <div>
@@ -557,6 +643,11 @@ const NewBooking = () => {
                                   <div className="text-end">
                                     <div style={{ fontSize: 11, color: 'var(--muted)' }}>{room.nights} night{room.nights > 1 ? 's' : ''}</div>
                                     <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--primary)' }}>{cur} {room.estimatedTotal}</div>
+                                    {extraBedState.enabled && extraBedState.cost > 0 && (
+                                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                                        +{cur} {(parseFloat(extraBedState.cost) * room.nights).toFixed(2)} extra bed
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -604,19 +695,33 @@ const NewBooking = () => {
                     </h6>
                   </Card.Header>
                   <Card.Body className="p-0">
-                    {selectedRooms.map((room, i) => (
-                      <div key={room._id} style={{ padding: '12px 16px', borderBottom: i < selectedRooms.length - 1 ? '1px solid var(--separator)' : 'none' }}>
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div>
-                            <div className="fw-semibold">Room {room.room_number}</div>
-                            <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                              {getCategoryName(room.category_id)} · {guestDistribution[room._id] || 0} guest{(guestDistribution[room._id] || 0) !== 1 ? 's' : ''}
+                    {selectedRooms.map((room, i) => {
+                      const eb = extraBed[room._id] || {};
+                      const ebTotal = getExtraBedTotal(room._id);
+                      return (
+                        <div key={room._id} style={{ padding: '12px 16px', borderBottom: i < selectedRooms.length - 1 ? '1px solid var(--separator)' : 'none' }}>
+                          <div className="d-flex justify-content-between align-items-start">
+                            <div>
+                              <div className="fw-semibold">Room {room.room_number}</div>
+                              <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                                {getCategoryName(room.category_id)} · {guestDistribution[room._id] || 0} guest{(guestDistribution[room._id] || 0) !== 1 ? 's' : ''}
+                              </div>
+                              {eb.enabled && ebTotal > 0 && (
+                                <div style={{ fontSize: 11, color: 'var(--primary)', marginTop: 2 }}>
+                                  + Extra bed: {cur} {ebTotal.toFixed(2)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-end">
+                              <div className="fw-bold" style={{ fontSize: 15 }}>{cur} {room.estimatedTotal}</div>
+                              {eb.enabled && ebTotal > 0 && (
+                                <div style={{ fontSize: 11, color: 'var(--primary)' }}>+{cur} {ebTotal.toFixed(2)}</div>
+                              )}
                             </div>
                           </div>
-                          <div className="fw-bold" style={{ fontSize: 15 }}>{cur} {room.estimatedTotal}</div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     <div style={{ padding: '12px 16px', background: 'rgba(var(--primary-rgb),.05)', borderTop: '2px solid var(--primary)' }}>
                       <div className="d-flex justify-content-between align-items-center">
                         <div>
@@ -625,7 +730,7 @@ const NewBooking = () => {
                             {getTotalGuestsDistributed()} guests · {selectedRooms[0]?.nights} nights
                           </div>
                         </div>
-                        <div className="fw-bold text-primary" style={{ fontSize: 18 }}>{cur} {getTotalPrice().toFixed(2)}</div>
+                        <div className="fw-bold text-primary" style={{ fontSize: 18 }}>{cur} {getGrandTotal().toFixed(2)}</div>
                       </div>
                     </div>
                   </Card.Body>
@@ -715,17 +820,39 @@ const NewBooking = () => {
                     <h6 className="mb-0">Billing Summary</h6>
                   </Card.Header>
                   <Card.Body className="p-0">
-                    {selectedRooms.map((room, i) => (
-                      <div key={room._id} style={S.confirmRow(false)}>
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div style={{ fontSize: 13 }}>
-                            <div className="fw-semibold">Room {room.room_number}</div>
-                            <div style={{ fontSize: 11, color: 'var(--muted)' }}>{room.nights} nights × {cur} {room.current_price}</div>
+                    {selectedRooms.map((room, i) => {
+                      const eb = extraBed[room._id] || {};
+                      const ebTotal = getExtraBedTotal(room._id);
+                      return (
+                        <div key={room._id} style={S.confirmRow(false)}>
+                          <div className="d-flex justify-content-between align-items-start">
+                            <div style={{ fontSize: 13 }}>
+                              <div className="fw-semibold">Room {room.room_number}</div>
+                              <div style={{ fontSize: 11, color: 'var(--muted)' }}>{room.nights} nights × {cur} {room.current_price}</div>
+                              {eb.enabled && ebTotal > 0 && (
+                                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                                  Extra bed: {room.nights} nights × {cur} {parseFloat(eb.cost).toFixed(2)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-end">
+                              <div className="fw-bold">{cur} {room.estimatedTotal}</div>
+                              {eb.enabled && ebTotal > 0 && (
+                                <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600 }}>+{cur} {ebTotal.toFixed(2)}</div>
+                              )}
+                            </div>
                           </div>
-                          <div className="fw-bold">{cur} {room.estimatedTotal}</div>
+                        </div>
+                      );
+                    })}
+                    {getTotalExtraBedCost() > 0 && (
+                      <div style={S.confirmRow(false)}>
+                        <div className="d-flex justify-content-between">
+                          <span style={{ fontSize: 13, color: 'var(--muted)' }}>Extra Bed Subtotal</span>
+                          <span className="fw-bold text-primary">+{cur} {getTotalExtraBedCost().toFixed(2)}</span>
                         </div>
                       </div>
-                    ))}
+                    )}
                     {parseFloat(guestData.discount_amount) > 0 && (
                       <div style={S.confirmRow(false)}>
                         <div className="d-flex justify-content-between">
@@ -743,7 +870,7 @@ const NewBooking = () => {
                           </div>
                         </div>
                         <div className="fw-bold text-primary" style={{ fontSize: 20 }}>
-                          {cur} {(getTotalPrice() - parseFloat(guestData.discount_amount || 0)).toFixed(2)}
+                          {cur} {(getGrandTotal() - parseFloat(guestData.discount_amount || 0)).toFixed(2)}
                         </div>
                       </div>
                     </div>

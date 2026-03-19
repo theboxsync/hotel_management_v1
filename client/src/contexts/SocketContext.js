@@ -12,22 +12,26 @@ export const SocketProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const { currentUser } = useAuth();
 
-  useEffect(() => {
-    const s = io(process.env.REACT_APP_API_URL);
+  // useEffect(() => {
+  //   const s = io(process.env.REACT_APP_API_URL, {
+  //     transports: ["websocket"],
+  //     reconnectionAttempts: 5,
+  //     reconnectionDelay: 3000,
+  //   });
 
-    s.on("connect", () => {
-      if (currentUser) {
-        s.emit("register", {
-          userId: currentUser._id,
-          role: "QSR",
-        });
-      }
-    });
+  //   s.on("connect", () => {
+  //     if (currentUser) {
+  //       s.emit("register", {
+  //         userId: currentUser._id,
+  //         role: "QSR",
+  //       });
+  //     }
+  //   });
 
-    setSocket(s);
+  //   setSocket(s);
 
-    return () => s.disconnect();
-  }, [currentUser]);
+  //   return () => s.disconnect();
+  // }, [currentUser]);
 
   return (
     <SocketContext.Provider value={{ socket, notifications, setNotifications }}>

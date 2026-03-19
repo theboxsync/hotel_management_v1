@@ -9,7 +9,7 @@ const User = require("../models/User");
  */
 const createRoomCategory = async (req, res) => {
   try {
-    const { category_name, base_price, max_occupancy, amenities, description } =
+    const { category_name, base_price, max_occupancy, is_extra_bed_allowed, amenities, description } =
       req.body;
 
     // Validation
@@ -63,6 +63,7 @@ const createRoomCategory = async (req, res) => {
       category_name,
       base_price,
       max_occupancy,
+      is_extra_bed_allowed: is_extra_bed_allowed || false,
       amenities: amenities || [],
       description: description || "",
       images: imageUrls,
@@ -180,6 +181,7 @@ const updateRoomCategory = async (req, res) => {
       category_name,
       base_price,
       max_occupancy,
+      is_extra_bed_allowed,
       amenities,
       description,
       existing_images, // Images already saved (sent from frontend)
@@ -257,6 +259,7 @@ const updateRoomCategory = async (req, res) => {
       }
       category.max_occupancy = max_occupancy;
     }
+    if (is_extra_bed_allowed !== undefined) category.is_extra_bed_allowed = is_extra_bed_allowed;
     if (amenities !== undefined) category.amenities = amenities;
     if (description !== undefined) category.description = description;
     category.images = allImages; // Update with combined images

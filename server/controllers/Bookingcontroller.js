@@ -19,8 +19,8 @@ const {
 const createBooking = async (req, res) => {
   try {
     const {
-      room_ids, // CHANGED: Now accepts array of room IDs
-      room_breakdown, // NEW: Array with guest distribution
+      room_ids,
+      room_breakdown,       // [{ room_id, guests_in_room, extra_bed, extra_bed_cost }]
       customer_name,
       customer_email,
       customer_phone,
@@ -33,12 +33,11 @@ const createBooking = async (req, res) => {
       discount_amount,
     } = req.body;
 
-    // Validation - support both single and multiple rooms
+    // ── Validation ──────────────────────────────────────────────────────────
     const roomIdsArray = Array.isArray(room_ids) ? room_ids : [room_ids];
 
     if (
-      !roomIdsArray ||
-      roomIdsArray.length === 0 ||
+      !roomIdsArray.length ||
       !customer_name ||
       !customer_email ||
       !customer_phone ||
@@ -52,16 +51,11 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(customer_email)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid email format",
-      });
+      return res.status(400).json({ success: false, message: "Invalid email format" });
     }
 
-    // Validate dates
     const dateValidation = validateBookingDates(check_in_date, check_out_date);
     if (!dateValidation.isValid) {
       return res.status(400).json({
@@ -73,105 +67,106 @@ const createBooking = async (req, res) => {
 
     const nights = dateValidation.nights;
 
-    // Verify all rooms exist and belong to this hotel
+    // ── Fetch & verify rooms ─────────────────────────────────────────────────
     const rooms = await Room.find({
       _id: { $in: roomIdsArray },
       hotel_id: req.user.hotel_id,
     });
 
     if (rooms.length !== roomIdsArray.length) {
-      return res.status(404).json({
-        success: false,
-        message: "One or more rooms not found",
-      });
+      return res.status(404).json({ success: false, message: "One or more rooms not found" });
     }
 
-    // Check if any room is unavailable
     const unavailableRooms = rooms.filter(
-      (room) => room.status === "maintenance" || room.status === "out_of_order"
+      (r) => r.status === "maintenance" || r.status === "out_of_order"
     );
-
     if (unavailableRooms.length > 0) {
       return res.status(400).json({
         success: false,
-        message: `Room(s) ${unavailableRooms.map(r => r.room_number).join(", ")} are currently unavailable`,
+        message: `Room(s) ${unavailableRooms.map((r) => r.room_number).join(", ")} are currently unavailable`,
       });
     }
 
-    // Get categories for all rooms
-    const categoryIds = [...new Set(rooms.map(r => r.category_id))];
+    // ── Fetch categories ─────────────────────────────────────────────────────
+    const categoryIds = [...new Set(rooms.map((r) => r.category_id))];
     const categories = await RoomCategory.find({ _id: { $in: categoryIds } });
     const categoryMap = {};
-    categories.forEach(cat => {
-      categoryMap[cat._id] = cat;
-    });
+    categories.forEach((cat) => { categoryMap[cat._id.toString()] = cat; });
 
-    // Validate total occupancy
-    let totalMaxOccupancy = 0;
-    rooms.forEach(room => {
-      const category = categoryMap[room.category_id];
-      if (category) {
-        totalMaxOccupancy += category.max_occupancy;
-      }
-    });
+    // ── Occupancy check ──────────────────────────────────────────────────────
+    const totalMaxOccupancy = rooms.reduce((sum, room) => {
+      const cat = categoryMap[room.category_id.toString()];
+      return sum + (cat?.max_occupancy || 0);
+    }, 0);
 
     if (guests_count > totalMaxOccupancy) {
       return res.status(400).json({
         success: false,
-        message: `Maximum occupancy for selected rooms is ${totalMaxOccupancy} guests. Please select additional rooms.`,
+        message: `Maximum occupancy for selected rooms is ${totalMaxOccupancy} guests.`,
       });
     }
 
-    // Check availability for all rooms
+    // ── Availability check ───────────────────────────────────────────────────
     const availabilityChecks = await Promise.all(
-      roomIdsArray.map(room_id =>
-        isRoomAvailable(room_id, check_in_date, check_out_date)
-      )
+      roomIdsArray.map((room_id) => isRoomAvailable(room_id, check_in_date, check_out_date))
     );
 
-    const unavailableRoomIds = roomIdsArray.filter((_, index) => !availabilityChecks[index]);
+    const unavailableRoomIds = roomIdsArray.filter((_, i) => !availabilityChecks[i]);
     if (unavailableRoomIds.length > 0) {
-      const unavailableRoomNumbers = rooms
-        .filter(r => unavailableRoomIds.includes(r._id.toString()))
-        .map(r => r.room_number);
-
+      const nums = rooms
+        .filter((r) => unavailableRoomIds.includes(r._id.toString()))
+        .map((r) => r.room_number);
       return res.status(409).json({
         success: false,
-        message: `Room(s) ${unavailableRoomNumbers.join(", ")} are not available for the selected dates`,
+        message: `Room(s) ${nums.join(", ")} are not available for the selected dates`,
       });
     }
 
-    // Calculate total amount
+    // ── Build room breakdown & calculate totals ──────────────────────────────
     let subtotal = 0;
+    let extraBedTotal = 0;
     const roomBreakdownData = [];
 
-    rooms.forEach(room => {
+    rooms.forEach((room) => {
+      const cat = categoryMap[room.category_id.toString()];
       const roomSubtotal = room.current_price * nights;
-      subtotal += roomSubtotal;
+      const breakdownItem = (room_breakdown || []).find(
+        (b) => b.room_id === room._id.toString()
+      );
 
-      // Find guest distribution for this room
-      const breakdownItem = room_breakdown?.find(b => b.room_id === room._id.toString());
+      // Extra bed — only allowed if category permits it
+      const extraBedAllowed = !!cat?.is_extra_bed_allowed;
+      const wantsExtraBed = extraBedAllowed && !!breakdownItem?.extra_bed;
+      const extraBedCost = wantsExtraBed ? (parseFloat(breakdownItem.extra_bed_cost) || 0) : 0;
+      const extraBedRoomTotal = extraBedCost * nights;
+
+      subtotal += roomSubtotal;
+      extraBedTotal += extraBedRoomTotal;
 
       roomBreakdownData.push({
         room_id: room._id.toString(),
         room_number: room.room_number,
         guests_in_room: breakdownItem?.guests_in_room || 0,
         price_per_night: room.current_price,
-        nights: nights,
+        nights,
         subtotal: roomSubtotal,
+
+        extra_bed: wantsExtraBed,
+        extra_bed_cost: extraBedCost,
+        extra_bed_total: extraBedRoomTotal,
       });
     });
 
+    // Total = room subtotal + extra bed charges - discount
     const total_amount = calculateTotalAmount(
-      subtotal,
-      1, // Already calculated with nights
+      subtotal + extraBedTotal,
+      1,                        // nights already baked in
       discount_amount || 0
     );
 
-    // Generate booking reference
+    // ── Create booking ───────────────────────────────────────────────────────
     const booking_reference = await generateBookingReference(req.user.hotel_id);
 
-    // Create booking
     const booking = new Booking({
       hotel_id: req.user.hotel_id,
       room_ids: roomIdsArray,
@@ -194,18 +189,21 @@ const createBooking = async (req, res) => {
 
     const savedBooking = await booking.save();
 
-    // Prepare response with room details
-    const roomDetails = rooms.map(room => {
-      const category = categoryMap[room.category_id];
-      const breakdown = roomBreakdownData.find(b => b.room_id === room._id.toString());
+    // ── Build response ───────────────────────────────────────────────────────
+    const roomDetails = rooms.map((room) => {
+      const cat = categoryMap[room.category_id.toString()];
+      const breakdown = roomBreakdownData.find((b) => b.room_id === room._id.toString());
 
       return {
         room_number: room.room_number,
         floor: room.floor,
-        category_name: category?.category_name || "Unknown",
+        category_name: cat?.category_name || "Unknown",
         price_per_night: room.current_price,
         guests_in_room: breakdown?.guests_in_room || 0,
         subtotal: breakdown?.subtotal || 0,
+        extra_bed: breakdown?.extra_bed || false,
+        extra_bed_cost: breakdown?.extra_bed_cost || 0,
+        extra_bed_total: breakdown?.extra_bed_total || 0,
       };
     });
 
@@ -218,14 +216,13 @@ const createBooking = async (req, res) => {
         booking_summary: {
           total_rooms: roomIdsArray.length,
           nights,
-          subtotal: subtotal,
+          subtotal,
+          extra_bed_total: extraBedTotal,
           discount: discount_amount || 0,
           total: total_amount,
         },
       },
     });
-
-    console.log(`Booking confirmation email should be sent to: ${customer_email}`);
   } catch (error) {
     console.error("Create booking error:", error);
     res.status(500).json({

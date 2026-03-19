@@ -21,6 +21,7 @@ const AddEditRoomCategory = () => {
         category_name: '',
         base_price: '',
         max_occupancy: '',
+        is_extra_bed_allowed: false,
         amenities: [],
         amenityInput: '',
         description: '',
@@ -52,6 +53,7 @@ const AddEditRoomCategory = () => {
                 category_name: category.category_name,
                 base_price: category.base_price,
                 max_occupancy: category.max_occupancy,
+                is_extra_bed_allowed: category.is_extra_bed_allowed || false,
                 amenities: Array.isArray(category.amenities) ? category.amenities : [],
                 amenityInput: '',
                 description: category.description || '',
@@ -134,6 +136,7 @@ const AddEditRoomCategory = () => {
             formDataToSend.append('base_price', formData.base_price);
             formDataToSend.append('max_occupancy', formData.max_occupancy);
             formDataToSend.append('description', formData.description || '');
+            formDataToSend.append('is_extra_bed_allowed', formData.is_extra_bed_allowed);
 
             const amenitiesArray = formData.amenities.map((a) => a.trim()).filter(Boolean);
 
@@ -300,6 +303,19 @@ const AddEditRoomCategory = () => {
                                                     <Form.Text className="text-muted">
                                                         Maximum number of guests
                                                     </Form.Text>
+                                                </Form.Group>
+                                            </Col>
+                                            <Col md={6}>
+                                                <Form.Group className='d-flex gap-2'>
+                                                    <Form.Check
+                                                        type="checkbox"
+                                                        name="is_extra_bed_allowed"
+                                                        checked={formData.is_extra_bed_allowed}
+                                                        onChange={(e) => setFormData({ ...formData, is_extra_bed_allowed: e.target.checked })}
+                                                        id='extrabed'
+                                                        className='cursor-pointer'
+                                                    />
+                                                    <Form.Label htmlFor='extrabed' className='cursor-pointer'>Allow extra bed for this category</Form.Label>
                                                 </Form.Group>
                                             </Col>
 

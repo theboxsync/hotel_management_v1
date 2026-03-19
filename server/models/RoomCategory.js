@@ -6,6 +6,7 @@ const roomCategorySchema = new Schema({
   category_name: { type: String, required: true },
   base_price: { type: Number, required: true },
   max_occupancy: { type: Number, required: true },
+  is_extra_bed_allowed: { type: Boolean, default: false },
   amenities: { type: Schema.Types.Mixed },
   description: { type: String },
   images: { type: [String] },

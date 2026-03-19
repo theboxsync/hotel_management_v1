@@ -59,6 +59,9 @@ const BookingSchema = new Schema({
       price_per_night: { type: Number },
       nights: { type: Number },
       subtotal: { type: Number },
+      extra_bed: { type: Boolean, default: false },
+      extra_bed_cost: { type: Number, default: 0 },
+      extra_bed_total: { type: Number, default: 0 },
     }
   ],
 
