@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import axios from 'axios';
-import { Badge, Col, Form, Row, Button, Modal, Spinner, Alert } from 'react-bootstrap';
+import { Badge, Col, Form, Row, Button, Modal, Spinner, Alert, Card } from 'react-bootstrap';
 import { useTable, useGlobalFilter, useSortBy, usePagination, useRowSelect } from 'react-table';
 import { toast } from 'react-toastify';
 import HtmlHead from 'components/html-head/HtmlHead';
@@ -181,73 +181,81 @@ const Feedback = () => {
   );
 
   return (
-    <>
-      <HtmlHead title={title} description={description} />
+    <div className="workstation-container pb-5">
+      <div className="container-fluid ps-lg-4 pe-lg-5">
+        <HtmlHead title={title} description={description} />
 
-      <Row>
-        <Col>
-          <div className="page-title-container">
-            <Row>
-              <Col xs="12" md="7">
-                <h1 className="mb-0 pb-0 display-4">{title}</h1>
-                <BreadcrumbList items={breadcrumbs} />
-              </Col>
-              <Col xs="12" md="5" className="d-flex align-items-start justify-content-end">
-                <Button variant="primary" onClick={() => history.push('/operations/qr-for-feedback')} disabled={loading}>
-                  <CsLineIcons icon="qr-code" className="me-2" /> Feedback QR
-                </Button>
-              </Col>
-            </Row>
-          </div>
+        {/* Page title header */}
+        <div className="page-title-container mb-4 mt-2 mt-lg-0">
+          <Row className="g-3 align-items-center">
+            <Col xs="12" md="7">
+              <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>{title}</h1>
+              <BreadcrumbList items={breadcrumbs} />
+            </Col>
+            <Col xs="12" md="5" className="d-flex justify-content-md-end gap-2 mt-3 mt-md-0">
+              <Button
+                className="btn-capsule btn-capsule-sm d-flex align-items-center gap-2"
+                onClick={() => history.push('/operations/qr-for-feedback')}
+                disabled={loading}
+              >
+                <CsLineIcons icon="qr-code" size="18" />
+                Feedback QR
+              </Button>
+            </Col>
+          </Row>
+        </div>
 
-          {/* Loading State */}
-          {loading && (
-            <Row className="justify-content-center my-5">
-              <Col xs={12} className="text-center">
-                <Spinner animation="border" variant="primary" className="mb-3" />
-                <p>Loading feedback data...</p>
-              </Col>
-            </Row>
-          )}
-
-          {/* Content */}
-          {!loading && (
-            <div className="mt-3">
-              <Row className="mb-3">
-                <Col sm="12" md="5" lg="3" xxl="2">
-                  <div className="d-inline-block float-md-start me-1 mb-1 mb-md-0 search-input-container w-100 shadow bg-foreground">
-                    <ControlsSearch tableInstance={tableInstance} />
-                  </div>
-                </Col>
-                <Col sm="12" md="7" lg="9" xxl="10" className="text-end">
-                  <div className="d-inline-block">
-                    <ControlsPageSize tableInstance={tableInstance} />
-                  </div>
+        {/* Outer Card Wrapper */}
+        <Card className="workstation-card border-0 mb-4 shadow-sm">
+          <Card.Body className="p-4">
+            {/* Loading State */}
+            {loading && (
+              <Row className="justify-content-center my-5">
+                <Col xs={12} className="text-center">
+                  <Spinner animation="border" variant="primary" className="mb-3" />
+                  <p>Loading feedback data...</p>
                 </Col>
               </Row>
-              <Row>
-                <Col xs="12">
-                  {feedbacks.length === 0 ? (
-                    <Alert variant="info" className="text-center">
-                      <CsLineIcons icon="inbox" className="me-2" />
-                      No feedback found.
-                    </Alert>
-                  ) : (
-                    <Row>
-                      <Col xs="12" style={{ overflow: 'auto' }}>
-                        <Table className="react-table rows" tableInstance={tableInstance} />
-                      </Col>
-                      <Col xs="12">
-                        <TablePagination tableInstance={tableInstance} />
-                      </Col>
-                    </Row>
-                  )}
-                </Col>
-              </Row>
-            </div>
-          )}
-        </Col>
-      </Row>
+            )}
+
+            {/* Content */}
+            {!loading && (
+              <div>
+                <Row className="mb-3">
+                  <Col sm="12" md="5" lg="3" xxl="2">
+                    <div className="d-inline-block float-md-start me-1 mb-1 mb-md-0 search-input-container w-100 shadow bg-foreground">
+                      <ControlsSearch tableInstance={tableInstance} />
+                    </div>
+                  </Col>
+                  <Col sm="12" md="7" lg="9" xxl="10" className="text-end">
+                    <div className="d-inline-block">
+                      <ControlsPageSize tableInstance={tableInstance} />
+                    </div>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col xs="12">
+                    {feedbacks.length === 0 ? (
+                      <Alert variant="info" className="text-center">
+                        <CsLineIcons icon="inbox" className="me-2" />
+                        No feedback found.
+                      </Alert>
+                    ) : (
+                      <Row>
+                        <Col xs="12" style={{ overflow: 'auto' }}>
+                          <Table className="react-table rows" tableInstance={tableInstance} />
+                        </Col>
+                        <Col xs="12">
+                          <TablePagination tableInstance={tableInstance} />
+                        </Col>
+                      </Row>
+                    )}
+                  </Col>
+                </Row>
+              </div>
+            )}
+          </Card.Body>
+        </Card>
 
       {/* Reply Modal */}
       <Modal className="modal-right large" show={showReplyModal} onHide={() => setShowReplyModal(false)} backdrop="static">
@@ -302,7 +310,8 @@ const Feedback = () => {
         data={selectedFeedback}
         fetchFeedbacks={fetchFeedbacks}
       />
-    </>
+      </div>
+    </div>
   );
 };
 

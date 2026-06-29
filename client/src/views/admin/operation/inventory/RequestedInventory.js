@@ -309,19 +309,20 @@ const RequestedInventory = () => {
   };
 
   return (
-    <>
-      <HtmlHead title={title} description={description} />
+    <div className="workstation-container pb-5">
+      <div className="container-fluid ps-lg-4 pe-lg-5">
+        <HtmlHead title={title} description={description} />
 
-      <Row>
-        <Col>
-          <div className="page-title-container">
-            <Row>
-              <Col xs="12" md="7">
-                <h1 className="mb-0 pb-0 display-4">{title}</h1>
-                <BreadcrumbList items={breadcrumbs} />
-              </Col>
-            </Row>
-          </div>
+        <Row>
+          <Col>
+            <div className="page-title-container mb-4 mt-2 mt-lg-0">
+              <Row className="align-items-center">
+                <Col xs="12" md="7">
+                  <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>{title}</h1>
+                  <BreadcrumbList items={breadcrumbs} />
+                </Col>
+              </Row>
+            </div>
 
           {/* Search and controls - Always visible */}
           <Row className="mb-3">
@@ -518,7 +519,8 @@ const RequestedInventory = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-    </>
+      </div>
+    </div>
   );
 };
 

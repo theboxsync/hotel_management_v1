@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useHistory, NavLink } from 'react-router-dom';
-import { Card, Row, Col, Button, Form, Badge, Spinner, Alert, Dropdown, Modal, Collapse } from 'react-bootstrap';
+import { Card, Row, Col, Button, Form, Badge, Spinner, Alert, Modal, Collapse } from 'react-bootstrap';
 import { bookingAPI } from 'services/api';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
@@ -18,6 +18,7 @@ import TablePagination from 'components/table/TablePagination';
 /* ─────────────────────────────────────────────────────────────────────────────
    Portal dropdown menu — renders into document.body so it is never clipped
    by an overflow:auto ancestor.
+   Dynamic top, left, and minWidth are kept inline as they are calculated on demand.
 ───────────────────────────────────────────────────────────────────────────── */
 const PortalMenu = ({ show, toggleRef, children, onClose }) => {
   const menuRef = useRef(null);
@@ -59,17 +60,11 @@ const PortalMenu = ({ show, toggleRef, children, onClose }) => {
   return ReactDOM.createPortal(
     <div
       ref={menuRef}
-      className="dropdown-menu show shadow"
+      className="dropdown-portal-menu dropdown-menu show shadow"
       style={{
-        position: 'absolute',
         top: pos.top,
         left: pos.left,
         minWidth: pos.minWidth,
-        zIndex: 9999,
-        borderRadius: 10,
-        padding: '4px 0',
-        border: '1px solid var(--separator)',
-        background: 'var(--foreground)',
       }}
     >
       {children}
@@ -90,9 +85,8 @@ const ActionMenu = ({ children }) => {
       <button
         ref={toggleRef}
         type="button"
-        className="btn btn-outline-primary btn-sm btn-icon btn-icon-only"
+        className="btn btn-outline-primary btn-sm btn-icon btn-icon-only btn-action-more"
         onClick={() => setOpen(v => !v)}
-        style={{ borderRadius: 8 }}
       >
         <CsLineIcons icon="more-horizontal" />
       </button>
@@ -119,8 +113,7 @@ const ActionMenu = ({ children }) => {
 const MenuItem = ({ icon, children, onClick, danger }) => (
   <button
     type="button"
-    className="dropdown-item d-flex align-items-center gap-2"
-    style={{ fontSize: 13, padding: '7px 14px', color: danger ? 'var(--danger)' : undefined }}
+    className={`dropdown-menu-item-text ${danger ? 'danger-item' : ''}`}
     onClick={onClick}
   >
     <CsLineIcons icon={icon} size="14" />
@@ -246,7 +239,7 @@ const Bookings = () => {
       accessor: 'booking_reference',
       Cell: ({ row }) => (
         <div>
-          <div className="fw-bold text-primary" style={{ fontFamily: 'monospace', fontSize: 13 }}>{row.original.booking_reference}</div>
+          <div className="fw-bold text-primary booking-reference-text">{row.original.booking_reference}</div>
           <small className="text-muted text-capitalize">{row.original.booking_source}</small>
         </div>
       ),
@@ -271,7 +264,7 @@ const Bookings = () => {
             {row.original.rooms.map(r => r.category_name).filter((v, i, a) => a.indexOf(v) === i).join(', ')}
           </small>
           {row.original.total_rooms > 1 && (
-            <div><Badge bg="info" className="mt-1" style={{ fontSize: 10 }}>{row.original.total_rooms} Rooms</Badge></div>
+            <div><Badge bg="info" className="mt-1 booking-badge-sm">{row.original.total_rooms} Rooms</Badge></div>
           )}
         </div>
       ) : 'N/A',
@@ -361,142 +354,146 @@ const Bookings = () => {
   };
 
   return (
-    <>
-      <HtmlHead title={title} description={description} />
-      <Row>
-        <Col>
-          <div className="page-title-container">
-            <Row className="align-items-center">
-              <Col xs="12" md="7">
-                <h1 className="mb-0 pb-0 display-4">{title}</h1>
-                <BreadcrumbList items={breadcrumbs} />
-              </Col>
-              <Col xs="12" md="5" className="text-end">
-                <Button variant="primary" as={NavLink} to="/operations/new-booking" style={{ borderRadius: 10 }}>
-                  <CsLineIcons icon="plus" className="me-2" />
-                  New Booking
-                </Button>
-              </Col>
-            </Row>
-          </div>
+    <div className="workstation-container pb-5">
+      <div className="container-fluid ps-lg-4 pe-lg-5">
+        <HtmlHead title={title} description={description} />
 
-          {/* ── Controls row ── */}
-          <Row className="mb-3 align-items-center">
-            <Col sm="12" md="5" lg="3" xxl="2">
-              <div className="d-flex gap-2">
-                <div className="d-inline-block float-md-start me-1 mb-1 mb-md-0 search-input-container w-100 shadow bg-foreground">
-                  <ControlsSearch onSearch={handleSearch} />
-                </div>
-                <Button
-                  variant={showFilters ? 'secondary' : 'outline-secondary'}
-                  size="sm"
-                  className="btn-icon btn-icon-only position-relative"
-                  style={{ borderRadius: 8, flexShrink: 0 }}
-                  onClick={() => setShowFilters(v => !v)}
-                >
-                  <CsLineIcons icon={showFilters ? 'close' : 'filter'} />
-                  {getActiveFilterCount() > 0 && (
-                    <Badge bg="primary" className="position-absolute top-0 start-100 translate-middle" style={{ fontSize: 9 }}>
-                      {getActiveFilterCount()}
-                    </Badge>
-                  )}
-                </Button>
-              </div>
+        {/* Page title header */}
+        <div className="page-title-container mb-4 mt-2 mt-lg-0">
+          <Row className="g-3 align-items-center">
+            <Col xs="12" md="7">
+              <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>{title}</h1>
+              <BreadcrumbList items={breadcrumbs} />
             </Col>
-            <Col sm="12" md="7" lg="9" xxl="10" className="text-end">
-              <span className="me-3 text-muted" style={{ fontSize: 13 }}>
-                {loading ? 'Loading…' : `Showing ${bookings.length > 0 ? pageIndex * pageSize + 1 : 0}–${Math.min((pageIndex + 1) * pageSize, totalRecords)} of ${totalRecords}`}
-              </span>
-              <ControlsPageSize pageSize={pageSize} onPageSizeChange={handlePageSizeChange} />
+            <Col xs="12" md="5" className="d-flex justify-content-md-end gap-2 mt-3 mt-md-0">
+              <Button as={NavLink} to="/operations/new-booking" className="btn-capsule btn-capsule-sm d-flex align-items-center gap-2">
+                <CsLineIcons icon="plus" size="18" />
+                New Booking
+              </Button>
             </Col>
           </Row>
+        </div>
 
-          {/* ── Filter panel ── */}
-          <Collapse in={showFilters}>
-            <Card className="mb-3" style={{ borderRadius: 14 }}>
-              <Card.Body>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h6 className="mb-0 fw-bold">Filters</h6>
-                  {getActiveFilterCount() > 0 && (
-                    <Button variant="outline-danger" size="sm" onClick={handleClearFilters} style={{ borderRadius: 8, fontSize: 12 }}>
-                      <CsLineIcons icon="close" size="12" className="me-1" />
-                      Clear all
-                    </Button>
-                  )}
+        {/* Outer Card Wrapper */}
+        <Card className="workstation-card border-0 mb-4 shadow-sm">
+          <Card.Body className="p-4">
+
+            {/* Controls row */}
+            <Row className="mb-4 align-items-center">
+              <Col sm="12" md="5" lg="3" xxl="2">
+                <div className="d-flex gap-2">
+                  <div className="d-inline-block float-md-start me-1 mb-1 mb-md-0 search-input-container w-100 shadow bg-foreground">
+                    <ControlsSearch onSearch={handleSearch} />
+                  </div>
+                  <Button
+                    variant={showFilters ? 'secondary' : 'outline-secondary'}
+                    size="sm"
+                    className="btn-icon btn-icon-only position-relative btn-action-more"
+                    onClick={() => setShowFilters(v => !v)}
+                  >
+                    <CsLineIcons icon={showFilters ? 'close' : 'filter'} />
+                    {getActiveFilterCount() > 0 && (
+                      <Badge bg="primary" className="position-absolute top-0 start-100 translate-middle booking-active-filters-badge">
+                        {getActiveFilterCount()}
+                      </Badge>
+                    )}
+                  </Button>
                 </div>
-                <Row className="g-3">
-                  <Col md={3}>
-                    <Form.Label style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)' }}>Status</Form.Label>
-                    <Form.Select size="sm" value={filters.status} onChange={e => handleFilterChange('status', e.target.value)} style={{ borderRadius: 8 }}>
-                      <option value="">All Statuses</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="checked_in">Checked In</option>
-                      <option value="checked_out">Checked Out</option>
-                      <option value="cancelled">Cancelled</option>
-                      <option value="no_show">No Show</option>
-                    </Form.Select>
+              </Col>
+              <Col sm="12" md="7" lg="9" xxl="10" className="text-end">
+                <span className="me-3 text-muted small">
+                  {loading ? 'Loading…' : `Showing ${bookings.length > 0 ? pageIndex * pageSize + 1 : 0}–${Math.min((pageIndex + 1) * pageSize, totalRecords)} of ${totalRecords}`}
+                </span>
+                <ControlsPageSize pageSize={pageSize} onPageSizeChange={handlePageSizeChange} />
+              </Col>
+            </Row>
+
+            {/* Filter panel */}
+            <Collapse in={showFilters}>
+              <Card className="mb-4 border-0 bg-light shadow-none">
+                <Card.Body className="p-3">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h6 className="mb-0 fw-bold">Filters</h6>
+                    {getActiveFilterCount() > 0 && (
+                      <Button variant="outline-danger" size="sm" onClick={handleClearFilters} className="btn-action-more small py-1 px-3">
+                        <CsLineIcons icon="close" size="12" className="me-1" />
+                        Clear all
+                      </Button>
+                    )}
+                  </div>
+                  <Row className="g-3">
+                    <Col md={3}>
+                      <Form.Label className="kanban-section-label">Status</Form.Label>
+                      <Form.Select size="sm" value={filters.status} onChange={e => handleFilterChange('status', e.target.value)} className="modern-input">
+                        <option value="">All Statuses</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="checked_in">Checked In</option>
+                        <option value="checked_out">Checked Out</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="no_show">No Show</option>
+                      </Form.Select>
+                    </Col>
+                    <Col md={3}>
+                      <Form.Label className="kanban-section-label">Source</Form.Label>
+                      <Form.Select size="sm" value={filters.source} onChange={e => handleFilterChange('source', e.target.value)} className="modern-input">
+                        <option value="">All Sources</option>
+                        <option value="direct">Direct</option>
+                        <option value="booking.com">Booking.com</option>
+                        <option value="makemytrip">MakeMyTrip</option>
+                        <option value="walk_in">Walk-in</option>
+                      </Form.Select>
+                    </Col>
+                    <Col md={3}>
+                      <Form.Label className="kanban-section-label">Check-In From</Form.Label>
+                      <Form.Control type="date" size="sm" value={filters.dateFrom} onChange={e => handleFilterChange('dateFrom', e.target.value)} className="modern-input" />
+                    </Col>
+                    <Col md={3}>
+                      <Form.Label className="kanban-section-label">Check-Out To</Form.Label>
+                      <Form.Control type="date" size="sm" value={filters.dateTo} onChange={e => handleFilterChange('dateTo', e.target.value)} className="modern-input" />
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
+            </Collapse>
+
+            {/* Table */}
+            {loading && bookings.length === 0 ? (
+              <div className="text-center py-5">
+                <Spinner animation="border" variant="primary" className="mb-3" />
+                <p className="text-muted">Loading bookings…</p>
+              </div>
+            ) : bookings.length === 0 ? (
+              <Alert variant="info" className="border-0 bg-light-info text-info rounded-lg">
+                <CsLineIcons icon="inbox" className="me-2" />
+                {searchTerm || getActiveFilterCount() > 0
+                  ? 'No results found. Try adjusting your search or filters.'
+                  : 'No bookings found.'}
+              </Alert>
+            ) : (
+              <>
+                <Row>
+                  <Col xs="12" className="table-scroll-container">
+                    <Table className="react-table rows table-reconcile" tableInstance={tableInstance} />
                   </Col>
-                  <Col md={3}>
-                    <Form.Label style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)' }}>Source</Form.Label>
-                    <Form.Select size="sm" value={filters.source} onChange={e => handleFilterChange('source', e.target.value)} style={{ borderRadius: 8 }}>
-                      <option value="">All Sources</option>
-                      <option value="direct">Direct</option>
-                      <option value="booking.com">Booking.com</option>
-                      <option value="makemytrip">MakeMyTrip</option>
-                      <option value="walk_in">Walk-in</option>
-                    </Form.Select>
-                  </Col>
-                  <Col md={3}>
-                    <Form.Label style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)' }}>Check-In From</Form.Label>
-                    <Form.Control type="date" size="sm" value={filters.dateFrom} onChange={e => handleFilterChange('dateFrom', e.target.value)} style={{ borderRadius: 8 }} />
-                  </Col>
-                  <Col md={3}>
-                    <Form.Label style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)' }}>Check-Out To</Form.Label>
-                    <Form.Control type="date" size="sm" value={filters.dateTo} onChange={e => handleFilterChange('dateTo', e.target.value)} style={{ borderRadius: 8 }} />
+                  <Col xs="12">
+                    <TablePagination paginationProps={paginationProps} />
                   </Col>
                 </Row>
-              </Card.Body>
-            </Card>
-          </Collapse>
+              </>
+            )}
 
-          {/* ── Table ── */}
-          {loading && bookings.length === 0 ? (
-            <div className="text-center py-5">
-              <Spinner animation="border" variant="primary" className="mb-3" />
-              <p className="text-muted">Loading bookings…</p>
-            </div>
-          ) : bookings.length === 0 ? (
-            <Alert variant="info" style={{ borderRadius: 12 }}>
-              <CsLineIcons icon="inbox" className="me-2" />
-              {searchTerm || getActiveFilterCount() > 0
-                ? 'No results found. Try adjusting your search or filters.'
-                : 'No bookings found.'}
-            </Alert>
-          ) : (
-            <>
-              {/* overflow:visible so the portal isn't needed for the wrapper,
-                  but we keep the horizontal scroll only on the table itself */}
-              <Row>
-                <Col xs="12" style={{ overflowX: 'auto', overflowY: 'visible' }}>
-                  <Table className="react-table rows" tableInstance={tableInstance} />
-                </Col>
-                <Col xs="12">
-                  <TablePagination paginationProps={paginationProps} />
-                </Col>
-              </Row>
-            </>
-          )}
-        </Col>
-      </Row>
+          </Card.Body>
+        </Card>
+      </div>
 
-      {/* ── Cancel modal ── */}
+      {/* Cancel modal */}
       <Modal
         show={cancelModal}
         onHide={() => { setCancelModal(false); setSelectedBooking(null); }}
         centered
       >
-        <Modal.Header closeButton style={{ borderBottom: '3px solid var(--danger)' }}>
-          <Modal.Title style={{ fontSize: 16 }}>
+        <Modal.Header closeButton className="cancel-modal-header pb-0 border-0">
+          <Modal.Title className="h5 mb-0">
             <CsLineIcons icon="x-circle" className="me-2 text-danger" />
             Cancel Booking
           </Modal.Title>
@@ -504,32 +501,32 @@ const Bookings = () => {
         <Modal.Body className="p-4">
           <p className="text-muted mb-3">Are you sure you want to cancel this booking? This action cannot be undone.</p>
           {selectedBooking && (
-            <div style={{ borderRadius: 10, border: '1px solid var(--separator)', overflow: 'hidden' }}>
+            <div className="booking-modal-detail-list border rounded">
               {[
                 ['Reference', selectedBooking.booking_reference],
                 ['Guest', selectedBooking.customer_name],
                 ['Check-In', format(new Date(selectedBooking.check_in_date), 'MMM dd, yyyy')],
               ].map(([label, val], i, arr) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 14px', borderBottom: i < arr.length - 1 ? '1px solid var(--separator)' : 'none', fontSize: 13 }}>
-                  <span style={{ color: 'var(--muted)', fontWeight: 600 }}>{label}</span>
-                  <span style={{ fontWeight: 700, fontFamily: label === 'Reference' ? 'monospace' : undefined }}>{val}</span>
+                <div key={label} className="d-flex justify-content-between p-3 border-bottom-0 border-top-0" style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--separator)' : 'none', fontSize: 13 }}>
+                  <span className="text-muted fw-bold">{label}</span>
+                  <span className={`fw-bold ${label === 'Reference' ? 'booking-reference-text' : ''}`}>{val}</span>
                 </div>
               ))}
             </div>
           )}
         </Modal.Body>
-        <Modal.Footer style={{ padding: '12px 20px' }}>
-          <Button variant="outline-secondary" onClick={() => { setCancelModal(false); setSelectedBooking(null); }} disabled={cancelling} style={{ borderRadius: 10 }}>
+        <Modal.Footer className="border-0 pt-0">
+          <Button variant="outline-secondary" onClick={() => { setCancelModal(false); setSelectedBooking(null); }} disabled={cancelling} className="btn-capsule btn-capsule-sm">
             Keep Booking
           </Button>
-          <Button variant="danger" onClick={handleCancelBooking} disabled={cancelling} style={{ borderRadius: 10, fontWeight: 700 }}>
+          <Button variant="danger" onClick={handleCancelBooking} disabled={cancelling} className="btn-capsule btn-capsule-sm fw-bold">
             {cancelling
               ? <><Spinner as="span" animation="border" size="sm" className="me-2" />Cancelling…</>
               : 'Yes, Cancel Booking'}
           </Button>
         </Modal.Footer>
       </Modal>
-    </>
+    </div>
   );
 };
 

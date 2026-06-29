@@ -1,0 +1,20 @@
+/* Custom tables overrides */
+.table-reconcile {
+  thead th {
+    background: #f8fafc;
+    color: #475569;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 1rem 1.25rem;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  
+  tbody td {
+    padding: 1rem 1.25rem;
+    font-size: 0.875rem;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+  }
+}

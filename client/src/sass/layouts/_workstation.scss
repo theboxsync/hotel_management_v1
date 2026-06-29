@@ -1,0 +1,58 @@
+/* Central workstation container grids and nav pills configuration */
+.workstation-container {
+  background: #f8fafc;
+  min-height: 100vh;
+  padding-bottom: 5rem;
+  padding-top: 1.5rem;
+}
+
+.nav-pills-custom {
+  border-bottom: 2px solid #f1f5f9 !important;
+  gap: 0.5rem;
+  margin-bottom: 2rem !important;
+  padding-bottom: 0.75rem !important;
+  display: flex;
+  flex-wrap: wrap;
+  
+  .nav-link {
+    border-radius: 50px !important;
+    padding: 0.6rem 1.5rem !important;
+    font-weight: 700 !important;
+    font-size: 0.85rem !important;
+    color: #64748b !important;
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+    transition: all 0.2s ease-in-out !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    
+    &:hover {
+      color: #23b3f4 !important;
+      border-color: #23b3f4 !important;
+      background: #f0f9ff !important;
+      
+      svg {
+        stroke: #23b3f4;
+      }
+    }
+    
+    &.active {
+      color: #ffffff !important;
+      background: #23b3f4 !important;
+      border-color: #23b3f4 !important;
+      box-shadow: 0 4px 12px rgba(35, 179, 244, 0.25) !important;
+      
+      svg {
+        stroke: #ffffff;
+      }
+    }
+    
+    svg {
+      stroke: currentColor;
+      transition: stroke 0.2s ease;
+    }
+  }
+}

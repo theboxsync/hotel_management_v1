@@ -146,32 +146,31 @@ const BookingDetails = () => {
     const finalAmount = booking.booking.total_amount + (booking.booking.extra_charges || 0);
 
     return (
-        <>
-            <HtmlHead title={title} description={description} />
+        <div className="workstation-container pb-5">
+            <div className="container-fluid ps-lg-4 pe-lg-5">
+                <HtmlHead title={title} description={description} />
 
-            <Row>
-                <Col>
-                    {/* Page Title */}
-                    <div className="page-title-container mb-4">
-                        <Row className="align-items-center">
-                            <Col xs="12" md="7">
-                                <h1 className="mb-0 pb-0 display-4">{title}</h1>
-                                <BreadcrumbList items={breadcrumbs} />
-                            </Col>
-                            <Col xs="12" md="5" className="text-end">
-                                <Button variant="outline-secondary" onClick={handleBack} className="me-2">
-                                    <CsLineIcons icon="arrow-left" className="me-2" />
-                                    Back
+                {/* Page Title */}
+                <div className="page-title-container mb-4 mt-2 mt-lg-0">
+                    <Row className="align-items-center">
+                        <Col xs="12" md="7">
+                            <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>{title}</h1>
+                            <BreadcrumbList items={breadcrumbs} />
+                        </Col>
+                        <Col xs="12" md="5" className="d-flex justify-content-md-end gap-2 mt-3 mt-md-0">
+                            <Button className="btn-capsule btn-capsule-sm d-flex align-items-center gap-2" onClick={handleBack}>
+                                <CsLineIcons icon="arrow-left" size="18" />
+                                Back
+                            </Button>
+                            {['confirmed', 'checked_in'].includes(booking.booking.booking_status) && (
+                                <Button className="btn-capsule btn-capsule-sm d-flex align-items-center gap-2" onClick={handleEdit}>
+                                    <CsLineIcons icon="edit" size="18" />
+                                    Edit Booking
                                 </Button>
-                                {['confirmed', 'checked_in'].includes(booking.booking.booking_status) && (
-                                    <Button variant="primary" onClick={handleEdit}>
-                                        <CsLineIcons icon="edit" className="me-2" />
-                                        Edit Booking
-                                    </Button>
-                                )}
-                            </Col>
-                        </Row>
-                    </div>
+                            )}
+                        </Col>
+                    </Row>
+                </div>
 
                     {/* Booking Reference Header Card */}
                     <Card className="mb-4 shadow-sm">
@@ -551,8 +550,6 @@ const BookingDetails = () => {
                             </div>
                         </Card.Body>
                     </Card>
-                </Col>
-            </Row>
 
             {/* Payment Tracker Modal */}
             <PaymentTracker
@@ -612,7 +609,8 @@ const BookingDetails = () => {
                     </Button>
                 </Modal.Footer>
             </Modal>
-        </>
+            </div>
+        </div>
     );
 };
 

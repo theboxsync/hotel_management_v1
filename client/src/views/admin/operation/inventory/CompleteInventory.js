@@ -168,38 +168,47 @@ const CompleteInventory = () => {
 
   if (loading) {
     return (
-      <Row className="justify-content-center align-items-center min-vh-100">
-        <Col xs={12} className="text-center">
-          <Spinner animation="border" variant="primary" className="mb-3" />
-          <h5>Loading...</h5>
-        </Col>
-      </Row>
+      <div className="workstation-container pb-5">
+        <div className="container-fluid ps-lg-4 pe-lg-5">
+          <Row className="justify-content-center align-items-center min-vh-100">
+            <Col xs={12} className="text-center">
+              <Spinner animation="border" variant="primary" className="mb-3" />
+              <h5>Loading...</h5>
+            </Col>
+          </Row>
+        </div>
+      </div>
     );
   }
 
   if (!initialValues) {
     return (
-      <Alert variant="danger" className="m-5">
-        Failed to load inventory data. Please try again.
-      </Alert>
+      <div className="workstation-container pb-5">
+        <div className="container-fluid ps-lg-4 pe-lg-5">
+          <Alert variant="danger" className="my-5">
+            Failed to load inventory data. Please try again.
+          </Alert>
+        </div>
+      </div>
     );
   }
 
   return (
-    <>
-      <HtmlHead title="Complete Inventory Request" description="Complete inventory request with real data." />
-      <Row>
-        <Col>
-          <div className="page-title-container">
-            <h1 className="mb-0 pb-0 display-4">Complete Inventory Request</h1>
-            <BreadcrumbList
-              items={[
-                { to: '', text: 'Home' },
-                { to: 'operations/inventory', text: 'Inventory' },
-                { to: `operations/complete-inventory/${id}`, title: 'Complete Inventory' },
-              ]}
-            />
-          </div>
+    <div className="workstation-container pb-5">
+      <div className="container-fluid ps-lg-4 pe-lg-5">
+        <HtmlHead title="Complete Inventory Request" description="Complete inventory request with real data." />
+        <Row>
+          <Col>
+            <div className="page-title-container mb-4 mt-2 mt-lg-0">
+              <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>Complete Inventory Request</h1>
+              <BreadcrumbList
+                items={[
+                  { to: '', text: 'Home' },
+                  { to: 'operations/inventory', text: 'Inventory' },
+                  { to: `operations/complete-inventory/${id}`, title: 'Complete Inventory' },
+                ]}
+              />
+            </div>
 
           <Formik
             initialValues={{ ...defaultValues, ...initialValues }}
@@ -481,7 +490,7 @@ const CompleteInventory = () => {
                     variant="success"
                     type="submit"
                     disabled={isSubmitting}
-                    style={{ minWidth: '150px' }}
+                    className="btn-capsule btn-capsule-sm px-4"
                   >
                     {isSubmitting ? (
                       <>
@@ -527,7 +536,8 @@ const CompleteInventory = () => {
           )}
         </Col>
       </Row>
-    </>
+      </div>
+    </div>
   );
 };
 

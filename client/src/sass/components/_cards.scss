@@ -1,0 +1,14 @@
+/* Custom card shadows and border-radius rules */
+.workstation-card {
+  background: #ffffff !important;
+  border-radius: 1.5rem !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.01) !important;
+  overflow: hidden;
+}
+
+.stats-card-sub {
+  border-radius: 1.25rem !important;
+  border: 1px solid #f1f5f9 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
+}

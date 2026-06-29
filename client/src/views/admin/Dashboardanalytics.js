@@ -207,10 +207,10 @@ const DashboardAnalytics = () => {
                                         This Month
                                     </Button>
                                 </ButtonGroup>
-                                <Button variant="outline-secondary" size="sm" className="ms-2">
+                                {/* <Button variant="outline-secondary" size="sm" className="ms-2">
                                     <CsLineIcons icon="download" className="me-1" />
                                     Export
-                                </Button>
+                                </Button> */}
                             </Col>
                         </Row>
                     </div>
@@ -232,9 +232,9 @@ const DashboardAnalytics = () => {
                                             {formatCurrency(analytics.keyMetrics.totalRevenue.total)}
                                             {getGrowthBadge(analytics.keyMetrics.totalRevenue.growth)}
                                         </h4>
-                                        <small className="text-muted">
+                                        {/* <small className="text-muted">
                                             {formatCurrency(analytics.keyMetrics.totalRevenue.previous)} prev period
-                                        </small>
+                                        </small> */}
                                     </div>
                                 </Col>
 
@@ -248,9 +248,9 @@ const DashboardAnalytics = () => {
                                             {analytics.keyMetrics.occupancyRate}%
                                             {getGrowthBadge(analytics.occupancyRate.trend)}
                                         </h4>
-                                        <small className="text-muted">
+                                        {/* <small className="text-muted">
                                             {analytics.occupancyRate.capacityPercentage}% of capacity
-                                        </small>
+                                        </small> */}
                                     </div>
                                 </Col>
 
@@ -264,9 +264,9 @@ const DashboardAnalytics = () => {
                                             {analytics.keyMetrics.totalBookings.total}
                                             {getGrowthBadge(analytics.keyMetrics.totalBookings.growth)}
                                         </h4>
-                                        <small className="text-muted">
+                                        {/* <small className="text-muted">
                                             {analytics.keyMetrics.totalBookings.previous} prev period
-                                        </small>
+                                        </small> */}
                                     </div>
                                 </Col>
 
@@ -280,11 +280,11 @@ const DashboardAnalytics = () => {
                                             {analytics.keyMetrics.staffPerformance}%
                                             {getGrowthBadge(0.5)}
                                         </h4>
-                                        <small className="text-muted">Average score</small>
+                                        {/* <small className="text-muted">Average score</small> */}
                                     </div>
                                 </Col>
 
-                                <Col md={6} lg={4} xl={2}>
+                                {/* <Col md={6} lg={4} xl={2}>
                                     <div className="border rounded p-3">
                                         <div className="d-flex justify-content-between align-items-start mb-2">
                                             <small className="text-muted">Customer Satisfaction</small>
@@ -301,7 +301,7 @@ const DashboardAnalytics = () => {
                                             {analytics.customerSatisfaction.totalReviews} reviews
                                         </small>
                                     </div>
-                                </Col>
+                                </Col> */}
 
                                 <Col md={6} lg={4} xl={2}>
                                     <div className="border rounded p-3">
@@ -313,7 +313,7 @@ const DashboardAnalytics = () => {
                                             {analytics.keyMetrics.channelPerformance}%
                                             {getGrowthBadge(0.3)}
                                         </h4>
-                                        <small className="text-muted">Avg. performance</small>
+                                        {/* <small className="text-muted">Avg. performance</small> */}
                                     </div>
                                 </Col>
                             </Row>

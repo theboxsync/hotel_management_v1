@@ -92,12 +92,17 @@ const InventoryDetails = () => {
   }
 
   return (
-    <>
-      <HtmlHead title={title} description={description} />
-      <div className="page-title-container">
-        <h1 className="mb-0 pb-0 display-4">{title}</h1>
-        <BreadcrumbList items={breadcrumbs} />
-      </div>
+    <div className="workstation-container pb-5">
+      <div className="container-fluid ps-lg-4 pe-lg-5">
+        <HtmlHead title={title} description={description} />
+        <div className="page-title-container mb-4 mt-2 mt-lg-0">
+          <Row className="align-items-center">
+            <Col xs="12">
+              <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>{title}</h1>
+              <BreadcrumbList items={breadcrumbs} />
+            </Col>
+          </Row>
+        </div>
 
       <Card className="mb-4">
         <Card.Body>
@@ -276,18 +281,18 @@ const InventoryDetails = () => {
         </Card>
       )}
 
-      <Row>
-        <Col className="text-end">
-          <Button variant="secondary" onClick={() => history.push('/operations/inventory/history')} className="me-2">
-            <CsLineIcons icon="arrow-left" className="me-1" />
+      <Row className="mt-4">
+        <Col className="d-flex justify-content-end gap-2">
+          <Button variant="secondary" className="btn-capsule btn-capsule-sm" onClick={() => history.push('/operations/inventory/history')}>
+            <CsLineIcons icon="arrow-left" size="14" className="me-2" />
             Back
           </Button>
-          <Button variant="warning" onClick={() => history.push(`/operations/inventory/edit/${id}`)} className="me-2">
-            <CsLineIcons icon="edit" className="me-1" />
+          <Button variant="warning" className="btn-capsule btn-capsule-sm" onClick={() => history.push(`/operations/inventory/edit/${id}`)}>
+            <CsLineIcons icon="edit" size="14" className="me-2" />
             Edit
           </Button>
-          <Button variant="danger" onClick={() => setShowDeleteModal(true)} disabled={deleting}>
-            {deleting ? <Spinner animation="border" size="sm" className="me-1" /> : <CsLineIcons icon="bin" className="me-1" />}
+          <Button variant="danger" className="btn-capsule btn-capsule-sm" onClick={() => setShowDeleteModal(true)} disabled={deleting}>
+            {deleting ? <Spinner animation="border" size="sm" className="me-1" /> : <CsLineIcons icon="bin" size="14" className="me-2" />}
             Delete
           </Button>
         </Col>
@@ -322,7 +327,8 @@ const InventoryDetails = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-    </>
+      </div>
+    </div>
   );
 };
 

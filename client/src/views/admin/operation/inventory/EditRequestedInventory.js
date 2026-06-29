@@ -129,60 +129,65 @@ function EditRequestedInventory() {
 
     if (isLoading) {
         return (
-            <>
-                <HtmlHead title={title} description={description} />
-                <Row>
-                    <Col>
-                        <div className="page-title-container">
-                            <h1 className="mb-0 pb-0 display-4">{title}</h1>
-                            <BreadcrumbList items={breadcrumbs} />
-                        </div>
-                        <div className="text-center py-5">
-                            <Spinner animation="border" variant="primary" className="mb-3" style={{ width: '3rem', height: '3rem' }} />
-                            <h5>Loading...</h5>
-                            <p className="text-muted">Please wait while we fetch inventory information</p>
-                        </div>
-                    </Col>
-                </Row>
-            </>
+            <div className="workstation-container pb-5">
+                <div className="container-fluid ps-lg-4 pe-lg-5">
+                    <HtmlHead title={title} description={description} />
+                    <Row>
+                        <Col>
+                            <div className="page-title-container mb-4 mt-2 mt-lg-0">
+                                <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>{title}</h1>
+                                <BreadcrumbList items={breadcrumbs} />
+                            </div>
+                            <div className="text-center py-5">
+                                <Spinner animation="border" variant="primary" className="mb-3" style={{ width: '3rem', height: '3rem' }} />
+                                <h5>Loading...</h5>
+                                <p className="text-muted">Please wait while we fetch inventory information</p>
+                            </div>
+                        </Col>
+                    </Row>
+                </div>
+            </div>
         );
     }
 
     if (error) {
         return (
-            <>
-                <HtmlHead title={title} description={description} />
-                <Row>
-                    <Col>
-                        <div className="page-title-container">
-                            <h1 className="mb-0 pb-0 display-4">{title}</h1>
-                            <BreadcrumbList items={breadcrumbs} />
-                        </div>
-                        <Alert variant="danger" className="my-4">
-                            <CsLineIcons icon="error" className="me-2" />
-                            {error}
-                            <div className="mt-3">
-                                <Button variant="outline-primary" onClick={() => history.push('/operations/inventory/requested')}>
-                                    <CsLineIcons icon="arrow-left" className="me-2" />
-                                    Back to Inventory List
-                                </Button>
+            <div className="workstation-container pb-5">
+                <div className="container-fluid ps-lg-4 pe-lg-5">
+                    <HtmlHead title={title} description={description} />
+                    <Row>
+                        <Col>
+                            <div className="page-title-container mb-4 mt-2 mt-lg-0">
+                                <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>{title}</h1>
+                                <BreadcrumbList items={breadcrumbs} />
                             </div>
-                        </Alert>
-                    </Col>
-                </Row>
-            </>
+                            <Alert variant="danger" className="my-4">
+                                <CsLineIcons icon="error" className="me-2" />
+                                {error}
+                                <div className="mt-3">
+                                    <Button variant="outline-primary" onClick={() => history.push('/operations/inventory/requested')}>
+                                        <CsLineIcons icon="arrow-left" className="me-2" />
+                                        Back to Inventory List
+                                    </Button>
+                                </div>
+                            </Alert>
+                        </Col>
+                    </Row>
+                </div>
+            </div>
         );
     }
 
     return (
-        <>
-            <HtmlHead title={title} description={description} />
-            <Row>
-                <Col>
-                    <div className="page-title-container">
-                        <h1 className="mb-0 pb-0 display-4">Edit Inventory</h1>
-                        <BreadcrumbList items={breadcrumbs} />
-                    </div>
+        <div className="workstation-container pb-5">
+            <div className="container-fluid ps-lg-4 pe-lg-5">
+                <HtmlHead title={title} description={description} />
+                <Row>
+                    <Col>
+                        <div className="page-title-container mb-4 mt-2 mt-lg-0">
+                            <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>Edit Inventory</h1>
+                            <BreadcrumbList items={breadcrumbs} />
+                        </div>
 
                     <Form onSubmit={handleSubmit}>
                         <Card body className="mb-4">
@@ -258,7 +263,7 @@ function EditRequestedInventory() {
                             })}
 
                             {/* Add Item Button - Matches AddInventory style */}
-                            <Button variant="primary" onClick={addItem} disabled={isSubmitting} className="me-2">
+                            <Button variant="primary" onClick={addItem} disabled={isSubmitting} className="btn-capsule btn-capsule-sm me-2">
                                 <CsLineIcons icon="plus" className="me-1" />
                                 Add
                             </Button>
@@ -267,17 +272,17 @@ function EditRequestedInventory() {
                             <Form.Control type="hidden" name="status" value={values.status} onChange={handleChange} />
 
                             {/* Submit Button - Matches AddInventory pattern with icon and spinner */}
-                            <Button type="submit" variant="primary" disabled={isSubmitting} style={{ minWidth: '120px' }}>
+                            <Button type="submit" variant="primary" disabled={isSubmitting} className="btn-capsule btn-capsule-sm px-4">
                                 {isSubmitting ? (
                                     <>
                                         <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
                                         Saving...
                                     </>
                                 ) : (
-                                    <div className="d-flex align-items-center">
+                                    <span className="d-flex align-items-center">
                                         <CsLineIcons icon="save" className="me-1" />
                                         Update
-                                    </div>
+                                    </span>
                                 )}
                             </Button>
                         </Card>
@@ -302,9 +307,10 @@ function EditRequestedInventory() {
                             </Card>
                         </div>
                     )}
-                </Col>
-            </Row>
-        </>
+                    </Col>
+                </Row>
+            </div>
+        </div>
     );
 }
 

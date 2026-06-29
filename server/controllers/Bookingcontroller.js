@@ -478,59 +478,164 @@ const updateBooking = async (req, res) => {
       customer_phone,
       check_in_date,
       check_out_date,
-      booking_status,
       guests_count,
       special_requests,
+      // Room change fields
+      new_room_ids,       // array of new room IDs (optional — only when changing rooms)
+      room_breakdown,     // array: [{ room_id, guests_in_room, extra_bed, extra_bed_cost }]
     } = req.body;
 
-    // 📅 Date update + availability check
-    if (check_in_date || check_out_date) {
-      const newCheckIn = check_in_date || booking.check_in_date;
-      const newCheckOut = check_out_date || booking.check_out_date;
+    // ── Resolve dates (may come from body or stay as-is) ──────────────────
+    const newCheckIn = check_in_date ? new Date(check_in_date) : booking.check_in_date;
+    const newCheckOut = check_out_date ? new Date(check_out_date) : booking.check_out_date;
 
-      const dateValidation = validateBookingDates(newCheckIn, newCheckOut, booking_status);
-      if (!dateValidation.isValid) {
+    const dateValidation = validateBookingDates(newCheckIn, newCheckOut, booking.booking_status);
+    if (!dateValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid booking dates",
+        errors: dateValidation.errors,
+      });
+    }
+
+    const nights = dateValidation.nights;
+
+    // ── Room change logic ─────────────────────────────────────────────────
+    const isRoomChange = Array.isArray(new_room_ids) && new_room_ids.length > 0;
+    const roomIdsToUse = isRoomChange ? new_room_ids : booking.room_ids;
+
+    if (isRoomChange) {
+      // Verify all new rooms exist and belong to this hotel
+      const rooms = await Room.find({
+        _id: { $in: new_room_ids },
+        hotel_id: req.user.hotel_id,
+      });
+
+      if (rooms.length !== new_room_ids.length) {
+        return res.status(404).json({ success: false, message: "One or more rooms not found" });
+      }
+
+      // Check none are in maintenance / out_of_order
+      const badRooms = rooms.filter(
+        (r) => r.status === "maintenance" || r.status === "out_of_order"
+      );
+      if (badRooms.length > 0) {
         return res.status(400).json({
           success: false,
-          message: "Invalid booking dates",
-          errors: dateValidation.errors,
+          message: `Room(s) ${badRooms.map((r) => r.room_number).join(", ")} are unavailable`,
         });
       }
 
-      // Check availability for ALL rooms
-      for (const roomId of booking.room_ids) {
-        const available = await isRoomAvailable(
-          roomId,
-          newCheckIn,
-          newCheckOut,
-          booking._id
-        );
-        if (!available) {
-          return res.status(409).json({
+      // Validate total occupancy
+      if (guests_count || booking.guests_count) {
+        const categoryIds = [...new Set(rooms.map((r) => r.category_id))];
+        const categories = await RoomCategory.find({ _id: { $in: categoryIds } });
+        const categoryMap = Object.fromEntries(categories.map((c) => [c._id.toString(), c]));
+
+        const totalMaxOccupancy = rooms.reduce((sum, r) => {
+          const cat = categoryMap[r.category_id.toString()];
+          return sum + (cat?.max_occupancy || 0);
+        }, 0);
+
+        const guestCount = parseInt(guests_count, 10) || booking.guests_count;
+        if (guestCount > totalMaxOccupancy) {
+          return res.status(400).json({
             success: false,
-            message: "One or more rooms are not available for new dates",
+            message: `Maximum occupancy for selected rooms is ${totalMaxOccupancy} guests`,
           });
         }
       }
 
-      booking.check_in_date = new Date(newCheckIn);
-      booking.check_out_date = new Date(newCheckOut);
+      // Check availability for every new room (exclude current booking from conflict check)
+      for (const room of rooms) {
+        const available = await isRoomAvailable(
+          room._id,
+          newCheckIn,
+          newCheckOut,
+          booking._id // exclude self
+        );
+        if (!available) {
+          return res.status(409).json({
+            success: false,
+            message: `Room ${room.room_number} is not available for the selected dates`,
+          });
+        }
+      }
 
-      // 🔢 Recalculate pricing per room
-      const nights = dateValidation.nights;
+      // Build new room_breakdown
+      const categoryIds2 = [...new Set(rooms.map((r) => r.category_id))];
+      const categories2 = await RoomCategory.find({ _id: { $in: categoryIds2 } });
+      const categoryMap2 = Object.fromEntries(categories2.map((c) => [c._id.toString(), c]));
+
       let total = 0;
+      const newBreakdown = rooms.map((room) => {
+        const cat = categoryMap2[room.category_id.toString()];
+        const inputItem = (room_breakdown || []).find(
+          (b) => b.room_id === room._id.toString()
+        );
+        const roomSubtotal = room.current_price * nights;
 
-      booking.room_breakdown.forEach((room) => {
-        room.nights = nights;
-        room.subtotal = room.price_per_night * nights;
-        total += room.subtotal;
+        const extraBedAllowed = !!cat?.is_extra_bed_allowed;
+        const wantsExtraBed = extraBedAllowed && !!inputItem?.extra_bed;
+        const extraBedCost = wantsExtraBed ? (parseFloat(inputItem.extra_bed_cost) || 0) : 0;
+        const extraBedRoomTotal = extraBedCost * nights;
+
+        total += roomSubtotal + extraBedRoomTotal;
+
+        return {
+          room_id: room._id.toString(),
+          room_number: room.room_number,
+          guests_in_room: inputItem?.guests_in_room || 0,
+          price_per_night: room.current_price,
+          nights,
+          subtotal: roomSubtotal,
+          extra_bed: wantsExtraBed,
+          extra_bed_cost: extraBedCost,
+          extra_bed_total: extraBedRoomTotal,
+        };
       });
 
-      booking.total_amount = total - booking.discount_amount;
+      booking.room_ids = new_room_ids;
+      booking.total_rooms = new_room_ids.length;
+      booking.room_breakdown = newBreakdown;
+      booking.total_amount = total - (booking.discount_amount || 0);
+
+    } else {
+      // ── No room change — just recalculate with existing rooms if dates changed ──
+      if (check_in_date || check_out_date) {
+        let total = 0;
+        booking.room_breakdown.forEach((br) => {
+          br.nights = nights;
+          br.subtotal = br.price_per_night * nights;
+          br.extra_bed_total = (br.extra_bed_cost || 0) * nights;
+          total += br.subtotal + br.extra_bed_total;
+        });
+        booking.total_amount = total - (booking.discount_amount || 0);
+      }
+
+      // Check availability for existing rooms if dates changed
+      if (check_in_date || check_out_date) {
+        for (const roomId of booking.room_ids) {
+          const available = await isRoomAvailable(roomId, newCheckIn, newCheckOut, booking._id);
+          if (!available) {
+            return res.status(409).json({
+              success: false,
+              message: "One or more rooms are not available for the new dates",
+            });
+          }
+        }
+      }
     }
 
-    // ✏️ Simple field updates
+    // ── Apply date updates ────────────────────────────────────────────────
+    booking.check_in_date = newCheckIn;
+    booking.check_out_date = newCheckOut;
+
+    // ── Simple field updates ──────────────────────────────────────────────
     if (customer_name) booking.customer_name = customer_name;
+    if (customer_phone) booking.customer_phone = customer_phone;
+    if (guests_count) booking.guests_count = parseInt(guests_count, 10);
+    if (special_requests !== undefined) booking.special_requests = special_requests;
 
     if (customer_email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -539,9 +644,6 @@ const updateBooking = async (req, res) => {
       }
       booking.customer_email = customer_email;
     }
-
-    if (customer_phone) booking.customer_phone = customer_phone;
-    if (special_requests !== undefined) booking.special_requests = special_requests;
 
     const updatedBooking = await booking.save();
 

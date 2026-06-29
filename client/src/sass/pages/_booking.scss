@@ -1,0 +1,254 @@
+/* Booking module specific page styles */
+
+.dropdown-portal-menu {
+  position: absolute;
+  border-radius: 10px;
+  padding: 4px 0;
+  border: 1px solid var(--separator);
+  background: var(--foreground);
+  z-index: 9999;
+}
+
+.dropdown-menu-item-text {
+  font-size: 13px;
+  padding: 7px 14px;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--body);
+  
+  &:hover {
+    background: var(--background);
+    color: var(--primary);
+  }
+  
+  &.danger-item {
+    color: var(--danger);
+    &:hover {
+      background: rgba(var(--danger-rgb), 0.05);
+      color: var(--danger);
+    }
+  }
+}
+
+.booking-reference-text {
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.booking-badge-sm {
+  font-size: 10px;
+}
+
+.booking-active-filters-badge {
+  font-size: 9px;
+}
+
+.btn-action-more {
+  border-radius: 8px;
+}
+
+/* Kanban styling for check-in / check-out board */
+.kanban-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.kanban-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 3px solid var(--separator);
+  
+  &.col-checkin {
+    border-bottom-color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.07);
+    .kanban-col-header-title {
+      color: var(--primary);
+    }
+  }
+  
+  &.col-checkout {
+    border-bottom-color: #e8793a;
+    background: rgba(232, 121, 58, 0.07);
+    .kanban-col-header-title {
+      color: #e8793a;
+    }
+  }
+  
+  &.col-active {
+    border-bottom-color: #17a2b8;
+    background: rgba(23, 162, 184, 0.07);
+    .kanban-col-header-title {
+      color: #17a2b8;
+    }
+  }
+}
+
+.kanban-col-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.kanban-count-pill {
+  color: #fff;
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 28px;
+  text-align: center;
+  
+  &.pill-checkin {
+    background: var(--primary);
+  }
+  
+  &.pill-checkout {
+    background: #e8793a;
+  }
+  
+  &.pill-active {
+    background: #17a2b8;
+  }
+}
+
+.kanban-booking-card {
+  border-radius: 14px;
+  border: 1.5px solid var(--separator);
+  background: var(--foreground);
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.18s, border-color 0.18s;
+  
+  &:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+    border-color: var(--primary);
+  }
+}
+
+.kanban-booking-card-inner {
+  padding: 12px 14px;
+}
+
+.kanban-guest-name {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 1px;
+  line-height: 1.2;
+}
+
+.kanban-ref-badge {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: monospace;
+  letter-spacing: 0.04em;
+}
+
+.kanban-info-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.kanban-payment-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  
+  &.paid {
+    background: rgba(40, 167, 69, 0.08);
+    border: 1px solid rgba(40, 167, 69, 0.2);
+    .kanban-payment-dot {
+      background: #28a745;
+    }
+  }
+  
+  &.partial {
+    background: rgba(255, 193, 7, 0.08);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    .kanban-payment-dot {
+      background: #ffc107;
+    }
+  }
+  
+  &.unpaid {
+    background: rgba(108, 117, 125, 0.08);
+    border: 1px solid rgba(108, 117, 125, 0.2);
+    .kanban-payment-dot {
+      background: #6c757d;
+    }
+  }
+}
+
+.kanban-payment-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 5px;
+}
+
+.kanban-action-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--separator);
+  background: rgba(var(--primary-rgb), 0.02);
+}
+
+.kanban-empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+}
+
+.kanban-modal-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--background);
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.kanban-billing-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--separator);
+  font-size: 13px;
+}
+
+.kanban-billing-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(var(--primary-rgb), 0.07);
+  border: 1.5px solid rgba(var(--primary-rgb), 0.2);
+  margin-top: 10px;
+}

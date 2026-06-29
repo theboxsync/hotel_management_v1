@@ -373,23 +373,24 @@ const AddEditStaffPanel = () => {
     }
 
     return (
-        <>
-            <HtmlHead title={title} description={description} />
+        <div className="workstation-container pb-5">
+            <div className="container-fluid ps-lg-4 pe-lg-5">
+                <HtmlHead title={title} description={description} />
 
-            <div className="page-title-container">
-                <Row className="g-0">
-                    <Col md="7" className="mb-2">
-                        <h1 className="mb-2 pb-0 display-4">{title}</h1>
-                        <BreadcrumbList items={breadcrumbs} />
-                    </Col>
-                    <Col md="5" className="d-flex align-items-start justify-content-end">
-                        <Button variant="outline-primary" size="sm" onClick={() => history.push('/operations/staff-panel')} className="btn-icon btn-icon-start">
-                            <CsLineIcons icon="arrow-left" />
-                            <span>Back to Staff List</span>
-                        </Button>
-                    </Col>
-                </Row>
-            </div>
+                <div className="page-title-container mb-4 mt-2 mt-lg-0">
+                    <Row className="align-items-center">
+                        <Col md="7">
+                            <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>{title}</h1>
+                            <BreadcrumbList items={breadcrumbs} />
+                        </Col>
+                        <Col md="5" className="d-flex align-items-start justify-content-md-end mt-3 mt-md-0">
+                            <Button onClick={() => history.push('/operations/staff-panel')} className="btn-capsule btn-capsule-sm d-flex align-items-center gap-2">
+                                <CsLineIcons icon="arrow-left" size="15" />
+                                Back to Staff List
+                            </Button>
+                        </Col>
+                    </Row>
+                </div>
 
             <Form onSubmit={handleSubmit}>
                 <Row>
@@ -578,21 +579,21 @@ const AddEditStaffPanel = () => {
 
                             <div className="border-top pt-3">
                                 <div className="d-flex gap-2">
-                                    <Button type="submit" variant="primary" disabled={isSubmitting}>
+                                    <Button type="submit" className="btn-capsule btn-capsule-sm d-flex align-items-center gap-2" disabled={isSubmitting}>
                                         {isSubmitting ? (
                                             <>
-                                                <Spinner as="span" animation="border" size="sm" className="me-2" />
+                                                <Spinner as="span" animation="border" size="sm" />
                                                 {isEdit ? 'Updating...' : 'Creating...'}
                                             </>
                                         ) : (
                                             <>
-                                                <CsLineIcons icon="save" className="me-2" />
+                                                <CsLineIcons icon="save" size="18" />
                                                 {isEdit ? 'Update Staff Member' : 'Create Staff Member'}
                                             </>
                                         )}
                                     </Button>
-                                    <Button variant="outline-secondary" onClick={() => history.push('/operations/staff-panel')} disabled={isSubmitting}>
-                                        <CsLineIcons icon="close" className="me-2" />
+                                    <Button className="btn-capsule btn-capsule-sm d-flex align-items-center gap-2" onClick={() => history.push('/operations/staff-panel')} disabled={isSubmitting}>
+                                        <CsLineIcons icon="close" size="18" />
                                         Cancel
                                     </Button>
                                 </div>
@@ -622,7 +623,8 @@ const AddEditStaffPanel = () => {
                     </Card>
                 </div>
             )}
-        </>
+            </div>
+        </div>
     );
 };
 

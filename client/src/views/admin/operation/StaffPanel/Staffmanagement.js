@@ -201,16 +201,7 @@ const StaffManagement = () => {
                 accessor: 'name',
                 Cell: ({ row }) => (
                     <div className="d-flex align-items-center">
-                        <div
-                            className="sw-4 sh-4 me-3 rounded-xl d-flex justify-content-center align-items-center"
-                            style={{
-                                backgroundColor: '#e3f2fd',
-                                color: '#1976d2',
-                                fontWeight: 'bold',
-                                width: '32px',
-                                height: '32px',
-                            }}
-                        >
+                        <div className="sw-4 sh-4 me-3 rounded-xl d-flex justify-content-center align-items-center staff-name-initial-circle">
                             {row.original.name_initial}
                         </div>
                         <div>
@@ -250,7 +241,7 @@ const StaffManagement = () => {
                         <Button
                             variant="outline-primary"
                             size="sm"
-                            className="btn-icon btn-icon-only"
+                            className="btn-icon btn-icon-only btn-action-more"
                             onClick={() => history.push(`/operations/staff-panel/edit/${row.original._id}`)}
                             title="Edit"
                         >
@@ -259,7 +250,7 @@ const StaffManagement = () => {
                         <Button
                             variant={row.original.is_active ? 'outline-warning' : 'outline-success'}
                             size="sm"
-                            className="btn-icon btn-icon-only"
+                            className="btn-icon btn-icon-only btn-action-more"
                             onClick={() => toggleStaffStatus(row.original._id, row.original.is_active, row.original.name)}
                             title={row.original.is_active ? 'Deactivate' : 'Activate'}
                         >
@@ -268,7 +259,7 @@ const StaffManagement = () => {
                         <Button
                             variant="outline-danger"
                             size="sm"
-                            className="btn-icon btn-icon-only"
+                            className="btn-icon btn-icon-only btn-action-more danger-item"
                             onClick={() => deleteStaff(row.original._id, row.original.name)}
                             title="Delete"
                         >
@@ -315,168 +306,176 @@ const StaffManagement = () => {
     };
 
     return (
-        <>
-            <HtmlHead title={title} description={description} />
+        <div className="workstation-container pb-5">
+            <div className="container-fluid ps-lg-4 pe-lg-5">
+                <HtmlHead title={title} description={description} />
 
-            <div className="page-title-container">
-                <Row className="g-0 align-items-center">
-                    <Col md="7" className="mb-2">
-                        <h1 className="mb-2 pb-0 display-4">{title}</h1>
-                        <BreadcrumbList items={breadcrumbs} />
-                    </Col>
-                    <Col md="5" className="d-flex align-items-start justify-content-end">
-                        <Button
-                            variant="primary"
-                            onClick={() => history.push('/operations/staff-panel/add')}
-                        >
-                            <CsLineIcons icon="plus" className="me-2" />
-                            Add New Staff
-                        </Button>
-                    </Col>
-                </Row>
-            </div>
+                {/* Page title header */}
+                <div className="page-title-container mb-4 mt-2 mt-lg-0">
+                    <Row className="g-0 align-items-center">
+                        <Col md="7" className="mb-2">
+                            <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>{title}</h1>
+                            <BreadcrumbList items={breadcrumbs} />
+                        </Col>
+                        <Col md="5" className="d-flex align-items-start justify-content-end mt-3 mt-md-0">
+                            <Button
+                                onClick={() => history.push('/operations/staff-panel/add')}
+                                className="btn-capsule btn-capsule-sm d-flex align-items-center gap-2"
+                            >
+                                <CsLineIcons icon="plus" size="18" />
+                                Add New Staff
+                            </Button>
+                        </Col>
+                    </Row>
+                </div>
 
-            {/* Search and controls - Always visible */}
-            <Row className="mb-3">
-                <Col sm="12" md="5" lg="3" xxl="2">
-                    <div className="d-flex gap-2">
-                        <div className="d-inline-block float-md-start me-1 mb-1 mb-md-0 search-input-container w-100 shadow bg-foreground">
-                            <ControlsSearch onSearch={handleSearch} />
-                        </div>
-                        <Button
-                            variant={`${showFilters ? 'secondary' : 'outline-secondary'}`}
-                            size="sm"
-                            className="btn-icon btn-icon-only position-relative"
-                            onClick={() => setShowFilters(!showFilters)}
-                            title="Filters"
-                        >
-                            <CsLineIcons icon={`${showFilters ? 'close' : 'filter'}`} />
-                            {getActiveFilterCount() > 0 && (
-                                <Badge bg="primary" className="position-absolute top-0 start-100 translate-middle">
-                                    {getActiveFilterCount()}
-                                </Badge>
-                            )}
-                        </Button>
-                    </div>
-                </Col>
-                <Col sm="12" md="7" lg="9" xxl="10" className="text-end">
-                    <div className="d-inline-block me-2 text-muted">
-                        {loading ? (
-                            'Loading...'
-                        ) : (
-                            <>
-                                Showing {filteredStaff.length > 0 ? pageIndex * pageSize + 1 : 0} to {Math.min((pageIndex + 1) * pageSize, filteredStaff.length)} of {filteredStaff.length} entries
-                            </>
-                        )}
-                    </div>
-                    <div className="d-inline-block">
-                        <ControlsPageSize pageSize={pageSize} onPageSizeChange={handlePageSizeChange} />
-                    </div>
-                </Col>
-            </Row>
-
-            {/* Filter Section */}
-            <Collapse in={showFilters}>
-                <Card className="mb-3">
-                    <Card.Body>
-                        <div className="d-flex justify-content-between align-items-center">
-                            <h5>Filters</h5>
-                            {getActiveFilterCount() > 0 && (
-                                <Button variant="outline-danger" size="sm" onClick={handleClearFilters}>
-                                    <CsLineIcons icon="close" className="me-1" />
-                                    Clear
-                                </Button>
-                            )}
-                        </div>
-
-                        <div className="mt-2">
-                            <Row>
-                                <Col md={4} className="mb-3">
-                                    <Form.Label className="small text-muted fw-bold">Role</Form.Label>
-                                    <Form.Select
+                {/* Outer Card Wrapper */}
+                <Card className="workstation-card border-0 mb-4 shadow-sm">
+                    <Card.Body className="p-4">
+                        
+                        {/* Search and controls */}
+                        <Row className="mb-4 align-items-center">
+                            <Col sm="12" md="5" lg="3" xxl="2">
+                                <div className="d-flex gap-2">
+                                    <div className="d-inline-block float-md-start me-1 mb-1 mb-md-0 search-input-container w-100 shadow bg-foreground">
+                                        <ControlsSearch onSearch={handleSearch} />
+                                    </div>
+                                    <Button
+                                        variant={showFilters ? 'secondary' : 'outline-secondary'}
                                         size="sm"
-                                        value={filters.role}
-                                        onChange={(e) => handleFilterChange('role', e.target.value)}
+                                        className="btn-icon btn-icon-only position-relative btn-action-more"
+                                        onClick={() => setShowFilters(!showFilters)}
+                                        title="Filters"
                                     >
-                                        <option value="">All Roles</option>
-                                        <option value="admin">Admin</option>
-                                        <option value="manager">Manager</option>
-                                        <option value="staff">Staff</option>
-                                    </Form.Select>
-                                </Col>
+                                        <CsLineIcons icon={showFilters ? 'close' : 'filter'} />
+                                        {getActiveFilterCount() > 0 && (
+                                            <Badge bg="primary" className="position-absolute top-0 start-100 translate-middle booking-active-filters-badge">
+                                                {getActiveFilterCount()}
+                                            </Badge>
+                                        )}
+                                    </Button>
+                                </div>
+                            </Col>
+                            <Col sm="12" md="7" lg="9" xxl="10" className="text-end">
+                                <span className="me-3 text-muted small">
+                                    {loading ? (
+                                        'Loading...'
+                                    ) : (
+                                        <>
+                                            Showing {filteredStaff.length > 0 ? pageIndex * pageSize + 1 : 0} to {Math.min((pageIndex + 1) * pageSize, filteredStaff.length)} of {filteredStaff.length} entries
+                                        </>
+                                    )}
+                                </span>
+                                <ControlsPageSize pageSize={pageSize} onPageSizeChange={handlePageSizeChange} />
+                            </Col>
+                        </Row>
 
-                                <Col md={4} className="mb-3">
-                                    <Form.Label className="small text-muted fw-bold">Status</Form.Label>
-                                    <Form.Select
-                                        size="sm"
-                                        value={filters.status}
-                                        onChange={(e) => handleFilterChange('status', e.target.value)}
-                                    >
-                                        <option value="">All Status</option>
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
-                                    </Form.Select>
-                                </Col>
-                            </Row>
-                        </div>
+                        {/* Filter Section */}
+                        <Collapse in={showFilters}>
+                            <Card className="mb-4 border-0 bg-light shadow-none">
+                                <Card.Body className="p-3">
+                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 className="mb-0 fw-bold">Filters</h6>
+                                        {getActiveFilterCount() > 0 && (
+                                            <Button variant="outline-danger" size="sm" onClick={handleClearFilters} className="btn-action-more small py-1 px-3">
+                                                <CsLineIcons icon="close" className="me-1" />
+                                                Clear
+                                            </Button>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-2">
+                                        <Row>
+                                            <Col md={4} className="mb-3">
+                                                <Form.Label className="kanban-section-label">Role</Form.Label>
+                                                <Form.Select
+                                                    size="sm"
+                                                    value={filters.role}
+                                                    onChange={(e) => handleFilterChange('role', e.target.value)}
+                                                    className="modern-input"
+                                                >
+                                                    <option value="">All Roles</option>
+                                                    <option value="admin">Admin</option>
+                                                    <option value="manager">Manager</option>
+                                                    <option value="staff">Staff</option>
+                                                </Form.Select>
+                                            </Col>
+
+                                            <Col md={4} className="mb-3">
+                                                <Form.Label className="kanban-section-label">Status</Form.Label>
+                                                <Form.Select
+                                                    size="sm"
+                                                    value={filters.status}
+                                                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                                                    className="modern-input"
+                                                >
+                                                    <option value="">All Status</option>
+                                                    <option value="active">Active</option>
+                                                    <option value="inactive">Inactive</option>
+                                                </Form.Select>
+                                            </Col>
+                                        </Row>
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </Collapse>
+
+                        {/* Table / Results */}
+                        <Row>
+                            <Col>
+                                <div className="mb-2">
+                                    <div>
+                                        {loading && staffList.length === 0 ? (
+                                            <div className="text-center py-5">
+                                                <Spinner animation="border" variant="primary" />
+                                                <p className="text-muted mt-2">Loading staff members...</p>
+                                            </div>
+                                        ) : filteredStaff.length === 0 ? (
+                                            <div className="text-center py-5">
+                                                <div className="sw-13 sh-13 rounded-xl d-flex justify-content-center align-items-center mx-auto mb-4 staff-empty-state-icon">
+                                                    <CsLineIcons icon="user" size="50" className="text-muted" />
+                                                </div>
+                                                <h5 className="mb-2">
+                                                    {staffList.length === 0
+                                                        ? 'No Staff Members Yet'
+                                                        : 'No Results Found'}
+                                                </h5>
+                                                <p className="text-muted mb-4">
+                                                    {staffList.length === 0
+                                                        ? 'Get started by creating your first staff member'
+                                                        : 'Try adjusting your search or filters to find what you\'re looking for.'}
+                                                </p>
+                                                {staffList.length === 0 ? (
+                                                    <Button onClick={() => history.push('/operations/staff-panel/add')} className="btn-capsule btn-capsule-sm">
+                                                        <CsLineIcons icon="plus" className="me-2" />
+                                                        Add First Staff Member
+                                                    </Button>
+                                                ) : (
+                                                    <Button onClick={handleClearFilters} className="btn-capsule btn-capsule-sm btn-outline-primary">
+                                                        <CsLineIcons icon="rotate-ccw" className="me-2" />
+                                                        Clear Filters
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="table-scroll-container">
+                                                    <Table className="react-table rows table-reconcile" tableInstance={tableInstance} />
+                                                </div>
+                                                <div className="mt-3">
+                                                    <TablePagination paginationProps={paginationProps} />
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </Col>
+                        </Row>
+
                     </Card.Body>
                 </Card>
-            </Collapse>
-
-            <Row>
-                <Col>
-                    <div className="mb-5">
-                        <div>
-                            {loading && staffList.length === 0 ? (
-                                <div className="text-center py-5">
-                                    <Spinner animation="border" variant="primary" />
-                                    <p className="text-muted mt-2">Loading staff members...</p>
-                                </div>
-                            ) : filteredStaff.length === 0 ? (
-                                <div className="text-center py-5">
-                                    <div
-                                        className="sw-13 sh-13 rounded-xl d-flex justify-content-center align-items-center mx-auto mb-4"
-                                        style={{ backgroundColor: '#f5f5f5', width: '80px', height: '80px' }}
-                                    >
-                                        <CsLineIcons icon="user" size="50" className="text-muted" />
-                                    </div>
-                                    <h5 className="mb-2">
-                                        {staffList.length === 0
-                                            ? 'No Staff Members Yet'
-                                            : 'No Results Found'}
-                                    </h5>
-                                    <p className="text-muted mb-4">
-                                        {staffList.length === 0
-                                            ? 'Get started by creating your first staff member'
-                                            : 'Try adjusting your search or filters to find what you\'re looking for.'}
-                                    </p>
-                                    {staffList.length === 0 ? (
-                                        <Button variant="primary" onClick={() => history.push('/operations/staff-panel/add')}>
-                                            <CsLineIcons icon="plus" className="me-2" />
-                                            Add First Staff Member
-                                        </Button>
-                                    ) : (
-                                        <Button variant="outline-primary" onClick={handleClearFilters}>
-                                            <CsLineIcons icon="rotate-ccw" className="me-2" />
-                                            Clear Filters
-                                        </Button>
-                                    )}
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="table-responsive">
-                                        <Table className="react-table rows" tableInstance={tableInstance} />
-                                    </div>
-                                    <div className="mt-3">
-                                        <TablePagination paginationProps={paginationProps} />
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </Col>
-            </Row>
-        </>
+            </div>
+        </div>
     );
 };
 

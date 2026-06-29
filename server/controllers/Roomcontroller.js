@@ -2,6 +2,36 @@ const RoomCategory = require("../models/RoomCategory");
 const Room = require("../models/Room");
 const User = require("../models/User");
 
+
+/* ─── Helper: build area_layouts from request ───────────────────────────── */
+const buildAreaLayouts = (rawLayouts, uploadedFiles) => {
+  if (!rawLayouts) return [];
+
+  let layouts;
+  try {
+    layouts = typeof rawLayouts === 'string' ? JSON.parse(rawLayouts) : rawLayouts;
+  } catch {
+    return [];
+  }
+
+  return layouts.map((area, index) => {
+    // New files uploaded for this area
+    const fieldName = `images_area_${index}`;
+    const newFiles = uploadedFiles[fieldName] || [];
+    const newImagePaths = newFiles.map(f => `/uploads/rooms/${f.filename}`);
+
+    // Existing images kept from previous save (passed back by frontend)
+    const existingImages = Array.isArray(area.existingImages) ? area.existingImages : [];
+
+    return {
+      name: area.name || `Area ${index + 1}`,
+      description: area.description || '',
+      images: [...existingImages, ...newImagePaths],
+    };
+  });
+};
+
+
 /**
  * @desc    Create room category
  * @route   POST /api/rooms/category
@@ -343,9 +373,8 @@ const deleteRoomCategory = async (req, res) => {
  */
 const createRoom = async (req, res) => {
   try {
-    const { category_id, room_number, floor, status, current_price } = req.body;
+    const { category_id, room_number, floor, status, current_price, area_layouts } = req.body;
 
-    // Validation
     if (!category_id || !room_number || floor === undefined) {
       return res.status(400).json({
         success: false,
@@ -353,33 +382,39 @@ const createRoom = async (req, res) => {
       });
     }
 
-    // Verify category exists and belongs to this hotel
     const category = await RoomCategory.findOne({
       _id: category_id,
       hotel_id: req.user.hotel_id,
     });
-
     if (!category) {
-      return res.status(404).json({
-        success: false,
-        message: "Room category not found",
-      });
+      return res.status(404).json({ success: false, message: "Room category not found" });
     }
 
-    // Check if room number already exists for this hotel
     const existingRoom = await Room.findOne({
       hotel_id: req.user.hotel_id,
-      room_number: room_number,
+      room_number,
     });
-
     if (existingRoom) {
-      return res.status(400).json({
-        success: false,
-        message: "Room number already exists",
-      });
+      return res.status(400).json({ success: false, message: "Room number already exists" });
     }
 
-    // Create room
+    // Build area layouts from uploaded files + JSON metadata
+    const uploadedFiles = req.files || {};  // when using upload.fields() or upload.any()
+    // If using upload.any(), convert array to object keyed by fieldname:
+    const filesMap = Array.isArray(uploadedFiles)
+      ? uploadedFiles.reduce((acc, f) => { (acc[f.fieldname] = acc[f.fieldname] || []).push(f); return acc; }, {})
+      : uploadedFiles;
+
+    const areaLayoutsData = buildAreaLayouts(area_layouts, filesMap);
+
+    // Parse room-specific amenities
+    let roomAmenities = [];
+    if (req.body['amenities[]']) {
+      roomAmenities = Array.isArray(req.body['amenities[]']) ? req.body['amenities[]'] : [req.body['amenities[]']];
+    } else if (Array.isArray(req.body.amenities)) {
+      roomAmenities = req.body.amenities;
+    }
+
     const room = new Room({
       hotel_id: req.user.hotel_id,
       category_id,
@@ -387,6 +422,8 @@ const createRoom = async (req, res) => {
       floor,
       status: status || "available",
       current_price: current_price || category.base_price,
+      amenities: roomAmenities,
+      area_layouts: areaLayoutsData,
     });
 
     const savedRoom = await room.save();
@@ -494,52 +531,57 @@ const getRoom = async (req, res) => {
  */
 const updateRoom = async (req, res) => {
   try {
-    const { category_id, room_number, floor, status, current_price } = req.body;
+    const { category_id, room_number, floor, status, current_price, area_layouts } = req.body;
 
     const room = await Room.findOne({
       _id: req.params.id,
       hotel_id: req.user.hotel_id,
     });
-
     if (!room) {
-      return res.status(404).json({
-        success: false,
-        message: "Room not found",
-      });
+      return res.status(404).json({ success: false, message: "Room not found" });
     }
 
-    // Check if new room number conflicts
+    // Room number conflict check
     if (room_number && room_number !== room.room_number) {
-      const existingRoom = await Room.findOne({
+      const conflict = await Room.findOne({
         hotel_id: req.user.hotel_id,
-        room_number: room_number,
+        room_number,
         _id: { $ne: req.params.id },
       });
-
-      if (existingRoom) {
-        return res.status(400).json({
-          success: false,
-          message: "Room number already exists",
-        });
+      if (conflict) {
+        return res.status(400).json({ success: false, message: "Room number already exists" });
       }
     }
 
-    // Verify new category if provided
+    // Category validation
     if (category_id && category_id !== room.category_id) {
       const category = await RoomCategory.findOne({
         _id: category_id,
         hotel_id: req.user.hotel_id,
       });
-
       if (!category) {
-        return res.status(404).json({
-          success: false,
-          message: "Room category not found",
-        });
+        return res.status(404).json({ success: false, message: "Room category not found" });
       }
     }
 
-    // Update fields
+    // Build area layouts
+    const uploadedFiles = req.files || {};
+    const filesMap = Array.isArray(uploadedFiles)
+      ? uploadedFiles.reduce((acc, f) => { (acc[f.fieldname] = acc[f.fieldname] || []).push(f); return acc; }, {})
+      : uploadedFiles;
+
+    // Only update area_layouts if the field was actually sent
+    if (area_layouts !== undefined) {
+      room.area_layouts = buildAreaLayouts(area_layouts, filesMap);
+    }
+
+    // Room-specific amenities
+    const amenitiesRaw = req.body['amenities[]'] || req.body.amenities;
+    if (amenitiesRaw !== undefined) {
+      room.amenities = Array.isArray(amenitiesRaw) ? amenitiesRaw : (amenitiesRaw ? [amenitiesRaw] : []);
+    }
+
+    // Simple field updates
     if (category_id) room.category_id = category_id;
     if (room_number) room.room_number = room_number;
     if (floor !== undefined) room.floor = floor;

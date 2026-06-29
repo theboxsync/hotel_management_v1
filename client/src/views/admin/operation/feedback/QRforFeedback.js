@@ -1,12 +1,22 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from 'contexts/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button, Card, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import CsLineIcons from 'cs-line-icons/CsLineIcons';
 import { toast } from 'react-toastify';
+import HtmlHead from 'components/html-head/HtmlHead';
+import BreadcrumbList from 'components/breadcrumb-list/BreadcrumbList';
 
 const QRforFeedback = () => {
+  const title = 'Feedback QR Code';
+  const description = 'Generate and print feedback QR code';
+  const breadcrumbs = [
+    { to: '', text: 'Home' },
+    { to: 'operations/feedback', text: 'Feedback' },
+    { to: 'operations/qr-for-feedback', text: 'Feedback QR Code' },
+  ];
+
   const [feedbackToken, setFeedbackToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -108,31 +118,45 @@ const QRforFeedback = () => {
   // }
 
   return (
-    <Row className="justify-content-center">
-      <Col>
-        <Card className="mb-5">
-          <Card.Header>
-            <Card.Title className="mb-0">Feedback QR Code</Card.Title>
-          </Card.Header>
-          <Card.Body className="text-center">
+    <div className="workstation-container pb-5">
+      <div className="container-fluid ps-lg-4 pe-lg-5">
+        <HtmlHead title={title} description={description} />
+
+        {/* Page title header */}
+        <div className="page-title-container mb-4 mt-2 mt-lg-0">
+          <Row className="g-3 align-items-center">
+            <Col xs="12" md="7">
+              <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>{title}</h1>
+              <BreadcrumbList items={breadcrumbs} />
+            </Col>
+          </Row>
+        </div>
+
+        {/* Outer Card Wrapper */}
+        <Card className="workstation-card border-0 mb-4 shadow-sm">
+          <Card.Body className="p-4 text-center">
             {feedbackToken ? (
               <>
                 <div className="mb-4">
                   <p className="text-muted mb-2">Scan the QR code to provide feedback:</p>
-                  <div ref={qrCodeRef} className="mb-3">
-                    <QRCodeSVG size={250} value={`${process.env.REACT_APP_HOME_URL}/feedback/${feedbackToken}`} className="border rounded" />
+                  <div ref={qrCodeRef} className="mb-3 d-flex justify-content-center">
+                    <QRCodeSVG size={250} value={`${process.env.REACT_APP_HOME_URL}/feedback/${feedbackToken}`} className="border rounded p-2 bg-white" />
                   </div>
                   <div className="small text-muted mb-3">Feedback URL: {`${process.env.REACT_APP_HOME_URL}/feedback/${feedbackToken}`}</div>
                 </div>
 
                 <div className="d-flex justify-content-center gap-2 mb-4">
-                  <Button variant="outline-primary" onClick={printQRCode} disabled={generating}>
-                    <CsLineIcons icon="print" className="me-2" />
+                  <Button
+                    className="btn-capsule btn-capsule-sm d-flex align-items-center gap-2"
+                    onClick={printQRCode}
+                    disabled={generating}
+                  >
+                    <CsLineIcons icon="print" size="18" />
                     Print QR Code
                   </Button>
 
                   <Button
-                    variant="outline-secondary"
+                    className="btn-capsule btn-capsule-sm d-flex align-items-center gap-2"
                     onClick={copyToClipboard}
                     disabled={copying || generating}
                   >
@@ -150,7 +174,7 @@ const QRforFeedback = () => {
                       </>
                     ) : (
                       <>
-                        <CsLineIcons icon="copy" className="me-2" />
+                        <CsLineIcons icon="copy" size="18" />
                         Copy URL
                       </>
                     )}
@@ -167,11 +191,10 @@ const QRforFeedback = () => {
             <p className="text-muted my-4">Generate a QR code that customers can scan to provide feedback about your service.</p>
 
             <Button
-              variant="primary"
               onClick={generateFeedbackQR}
               disabled={generating}
-              className="mb-4"
-              style={{ minWidth: '200px' }}
+              className="btn-capsule mb-4 px-5"
+              style={{ minWidth: '220px', height: '48px' }}
             >
               {generating ? (
                 <>
@@ -204,8 +227,8 @@ const QRforFeedback = () => {
             )}
           </Card.Body>
         </Card>
-      </Col>
-    </Row>
+      </div>
+    </div>
   );
 };
 

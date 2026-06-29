@@ -173,3 +173,29 @@ body {
 .layout-content {
   overflow-x: hidden;
 }
+
+// Workstation Style System (Phase 1 Migration)
+@import 'abstracts/variables';
+@import 'abstracts/mixins';
+@import 'abstracts/functions';
+
+@import 'base/reset';
+@import 'base/typography';
+@import 'base/utilities';
+
+@import 'components/buttons';
+@import 'components/forms';
+@import 'components/cards';
+@import 'components/tables';
+@import 'components/badges';
+@import 'components/modals';
+
+@import 'layouts/sidebar';
+@import 'layouts/header';
+@import 'layouts/workstation';
+
+@import 'pages/booking';
+@import 'pages/inventory';
+@import 'pages/rooms';
+@import 'pages/staff';
+

@@ -101,14 +101,15 @@ function AddRequestInventory() {
     };
 
     return (
-        <>
-            <HtmlHead title={title} description={description} />
-            <Row>
-                <Col>
-                    <div className="page-title-container">
-                        <h1 className="mb-0 pb-0 display-4">Add Inventory</h1>
-                        <BreadcrumbList items={breadcrumbs} />
-                    </div>
+        <div className="workstation-container pb-5">
+            <div className="container-fluid ps-lg-4 pe-lg-5">
+                <HtmlHead title={title} description={description} />
+                <Row>
+                    <Col>
+                        <div className="page-title-container mb-4 mt-2 mt-lg-0">
+                            <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>Add Inventory</h1>
+                            <BreadcrumbList items={breadcrumbs} />
+                        </div>
 
                     <Form onSubmit={handleSubmit}>
                         <Card body className="mb-4">
@@ -183,27 +184,27 @@ function AddRequestInventory() {
                                 );
                             })}
 
-                            {/* Add Item Button - Matches Admin side style */}
-                            <Button variant="primary" onClick={addItem} disabled={isSubmitting} className="me-2">
-                                <CsLineIcons icon="plus" className="me-1" />
-                                Add
+                             {/* Add Item Button - Matches Admin side style */}
+                            <Button variant="primary" onClick={addItem} disabled={isSubmitting} className="btn-capsule btn-capsule-sm me-2">
+                                <CsLineIcons icon="plus" className="me-1" size="14" />
+                                Add Item
                             </Button>
 
                             {/* Status Field - Hidden but included in form data */}
                             <Form.Control type="hidden" name="status" value="Requested" onChange={handleChange} />
 
                             {/* Submit Button - Matches Admin side pattern with icon and spinner */}
-                            <Button type="submit" variant="primary" disabled={isSubmitting} style={{ minWidth: '120px' }}>
+                            <Button type="submit" variant="primary" disabled={isSubmitting} className="btn-capsule btn-capsule-sm px-4">
                                 {isSubmitting ? (
                                     <>
                                         <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
                                         Saving...
                                     </>
                                 ) : (
-                                    <div className="d-flex align-items-center">
+                                    <span className="d-flex align-items-center">
                                         <CsLineIcons icon="save" className="me-1" />
                                         Submit
-                                    </div>
+                                    </span>
                                 )}
                             </Button>
                         </Card>
@@ -230,7 +231,8 @@ function AddRequestInventory() {
                     )}
                 </Col>
             </Row>
-        </>
+            </div>
+        </div>
     );
 }
 

@@ -1,0 +1,78 @@
+/* Custom SASS classes for Inventory module */
+
+.min-w-200 {
+  min-width: 200px !important;
+}
+
+.table-scroll-container {
+  overflow: auto !important;
+}
+
+.modal-body-scroll {
+  max-height: 300px !important;
+  overflow-y: auto !important;
+}
+
+.ai-insights-scroll {
+  max-height: 150px !important;
+  overflow-y: auto !important;
+}
+
+.ai-card-glow-warning {
+  border-left: 4px solid #f59e0b !important;
+}
+
+.delete-modal-icon-container {
+  padding: 1rem !important;
+  border-radius: 50% !important;
+  margin-right: 1rem !important;
+  background-color: rgba(207, 38, 55, 0.1) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-modal-icon {
+  color: #cf2637 !important;
+}
+
+.badge-pill-xs {
+  font-size: 0.65rem !important;
+}
+
+/* Chat window specific configurations */
+.chat-box {
+  background: #ffffff;
+  border-radius: 1.25rem;
+  border: 1px solid #e2e8f0;
+  height: 400px;
+  overflow-y: auto;
+  padding: 1.5rem;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.chat-bubble-assistant {
+  background: #f1f5f9;
+  color: #1e293b;
+  border-radius: 1rem 1rem 1rem 0;
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  max-width: 85%;
+  align-self: flex-start;
+}
+
+.chat-bubble-user {
+  background: #23b3f4;
+  color: #ffffff;
+  border-radius: 1rem 1rem 0 1rem;
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  max-width: 85%;
+  align-self: flex-end;
+}
+
+.ai-card-glow {
+  border-left: 4px solid #8b5cf6 !important;
+}

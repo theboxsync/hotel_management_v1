@@ -31,6 +31,8 @@ const operation = {
   InventoryDetails: withOperationsLayout(lazy(() => import('views/admin/operation/inventory/InventoryDetails'))),
   StaffManagement: withOperationsLayout(lazy(() => import('views/admin/operation/StaffPanel/Staffmanagement'))),
   AddEditStaff: withOperationsLayout(lazy(() => import('views/admin/operation/StaffPanel/AddEditStaffPanel'))),
+  feedback: withOperationsLayout(lazy(() => import('views/admin/operation/feedback/Feedback'))),
+  qrForFeedback: withOperationsLayout(lazy(() => import('views/admin/operation/feedback/QRforFeedback'))),
 };
 
 const appRoot = DEFAULT_PATHS.APP.endsWith('/') ? DEFAULT_PATHS.APP.slice(1, DEFAULT_PATHS.APP.length) : DEFAULT_PATHS.APP;
@@ -223,6 +225,18 @@ const allRoutes = {
           hideSub: true,
           redirect: true,
           to: '/operations/staff-panel/manage',
+        },
+        {
+          path: '/feedback',
+          label: 'Feedback',
+          hideSub: true,
+          component: operation.feedback,
+        },
+        {
+          path: '/qr-for-feedback',
+          label: 'Feedback QR',
+          hideSub: true,
+          component: operation.qrForFeedback,
         }
       ],
     },

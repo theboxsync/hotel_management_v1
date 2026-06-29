@@ -397,7 +397,7 @@ const InventoryHistory = () => {
           const isLong = text.split(' ').length > 8;
 
           return (
-            <div style={{ minWidth: '200px' }}>
+            <div className="min-w-200">
               <span>{truncateWords(text, 8)}</span>
               {isLong && (
                 <>
@@ -530,318 +530,336 @@ const InventoryHistory = () => {
   };
 
   return (
-    <>
+    <div className="workstation-container">
       <HtmlHead title={title} description={description} />
-      <Row>
-        <Col>
-          <div className="page-title-container mb-3">
-            <Row>
-              <Col xs="12" md="7">
-                <h1 className="mb-0 pb-0 display-4">{title}</h1>
-                <BreadcrumbList items={breadcrumbs} />
-              </Col>
-            </Row>
-          </div>
-
-          {/* Completed Requests */}
-          <h4 className="mb-3">
-            Completed Requests
-            <span className="text-muted ms-2">({completedTotalRecords})</span>
-          </h4>
-
-          {/* Search and controls - Always visible */}
-          <Row className="mb-3">
-            <Col sm="12" md="5" lg="3" xxl="2">
-              <div className="d-flex gap-2">
-                <div className="search-input-container w-100 shadow bg-foreground">
-                  <ControlsSearch onSearch={handleCompletedSearch} />
-                </div>
-                <Button
-                  variant={`${showCompletedFilters ? 'secondary' : 'outline-secondary'}`}
-                  size="sm"
-                  className="btn-icon btn-icon-only position-relative"
-                  onClick={() => setShowCompletedFilters(!showCompletedFilters)}
-                  title="Filters"
-                >
-                  <CsLineIcons icon={`${showCompletedFilters ? 'close' : 'filter'}`} />
-                  {getCompletedActiveFilterCount() > 0 && (
-                    <Badge bg="primary" className="position-absolute top-0 start-100 translate-middle">
-                      {getCompletedActiveFilterCount()}
-                    </Badge>
-                  )}
-                </Button>
-              </div>
-            </Col>
-            <Col sm="12" md="7" lg="9" xxl="10" className="text-end">
-              <div className="d-inline-block me-2 text-muted">
-                {loading.completed ? (
-                  'Loading...'
-                ) : (
-                  <>
-                    Showing {completedData.length > 0 ? completedPageIndex * completedPageSize + 1 : 0} to{' '}
-                    {Math.min((completedPageIndex + 1) * completedPageSize, completedTotalRecords)} of {completedTotalRecords} entries
-                  </>
-                )}
-              </div>
-              <div className="d-inline-block">
-                <ControlsPageSize pageSize={completedPageSize} onPageSizeChange={handleCompletedPageSizeChange} />
-              </div>
+      <div className="container-fluid px-lg-5">
+        <div className="page-title-container mb-4 mt-5 mt-lg-0">
+          <Row className="g-0 align-items-center">
+            <Col xs="auto" className="me-auto">
+              <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>{title}</h1>
+              <BreadcrumbList items={breadcrumbs} />
             </Col>
           </Row>
+        </div>
 
-          {/* Completed Filters */}
-          <Collapse in={showCompletedFilters}>
-            <Card className="mb-3">
-              <Card.Body>
-                <div className="d-flex justify-content-between align-items-center">
-                  <h5>Filters</h5>
-                  {getCompletedActiveFilterCount() > 0 && (
-                    <Button variant="outline-danger" size="sm" onClick={handleClearCompletedFilters}>
-                      <CsLineIcons icon="close" className="me-1" />
-                      Clear
-                    </Button>
+        {/* Completed Requests */}
+        <Card className="workstation-card border-0 mb-4">
+          <Card.Body className="p-4">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h4 className="fw-bold mb-0 text-dark">
+                Completed Requests
+                <span className="text-muted ms-2">({completedTotalRecords})</span>
+              </h4>
+            </div>
+
+            {/* Search and controls - Always visible */}
+            <Row className="mb-3">
+              <Col sm="12" md="5" lg="3" xxl="2">
+                <div className="d-flex gap-2">
+                  <div className="search-input-container w-100 shadow bg-foreground">
+                    <ControlsSearch onSearch={handleCompletedSearch} />
+                  </div>
+                  <Button
+                    variant={`${showCompletedFilters ? 'secondary' : 'outline-secondary'}`}
+                    size="sm"
+                    className="btn-icon btn-icon-only position-relative"
+                    onClick={() => setShowCompletedFilters(!showCompletedFilters)}
+                    title="Filters"
+                  >
+                    <CsLineIcons icon={`${showCompletedFilters ? 'close' : 'filter'}`} />
+                    {getCompletedActiveFilterCount() > 0 && (
+                      <Badge bg="primary" className="position-absolute top-0 start-100 translate-middle">
+                        {getCompletedActiveFilterCount()}
+                      </Badge>
+                    )}
+                  </Button>
+                </div>
+              </Col>
+              <Col sm="12" md="7" lg="9" xxl="10" className="text-end">
+                <div className="d-inline-block me-2 text-muted">
+                  {loading.completed ? (
+                    'Loading...'
+                  ) : (
+                    <>
+                      Showing {completedData.length > 0 ? completedPageIndex * completedPageSize + 1 : 0} to{' '}
+                      {Math.min((completedPageIndex + 1) * completedPageSize, completedTotalRecords)} of {completedTotalRecords} entries
+                    </>
                   )}
                 </div>
-
-                <div className="mt-2">
-                  <Row>
-                    {/* Request Date Range */}
-                    <Col md={4} className="mb-3">
-                      <Form.Label className="small text-muted fw-bold">Request Date Range</Form.Label>
-                      <Row>
-                        <Col md={6}>
-                          <Form.Label className="small text-muted">From</Form.Label>
-                          <Form.Control
-                            type="date"
-                            size="sm"
-                            value={completedFilters.requestFromDate}
-                            onChange={(e) => handleCompletedFilterChange('requestFromDate', e.target.value)}
-                          />
-                        </Col>
-                        <Col md={6}>
-                          <Form.Label className="small text-muted">To</Form.Label>
-                          <Form.Control
-                            type="date"
-                            size="sm"
-                            value={completedFilters.requestToDate}
-                            onChange={(e) => handleCompletedFilterChange('requestToDate', e.target.value)}
-                          />
-                        </Col>
-                      </Row>
-                    </Col>
-
-                    {/* Bill Date Range */}
-                    <Col md={4} className="mb-3">
-                      <Form.Label className="small text-muted fw-bold">Bill Date Range</Form.Label>
-                      <Row>
-                        <Col md={6}>
-                          <Form.Label className="small text-muted">From</Form.Label>
-                          <Form.Control
-                            type="date"
-                            size="sm"
-                            value={completedFilters.billFromDate}
-                            onChange={(e) => handleCompletedFilterChange('billFromDate', e.target.value)}
-                          />
-                        </Col>
-                        <Col md={6}>
-                          <Form.Label className="small text-muted">To</Form.Label>
-                          <Form.Control
-                            type="date"
-                            size="sm"
-                            value={completedFilters.billToDate}
-                            onChange={(e) => handleCompletedFilterChange('billToDate', e.target.value)}
-                          />
-                        </Col>
-                      </Row>
-                    </Col>
-                  </Row>
+                <div className="d-inline-block">
+                  <ControlsPageSize pageSize={completedPageSize} onPageSizeChange={handleCompletedPageSizeChange} />
                 </div>
-              </Card.Body>
-            </Card>
-          </Collapse>
-
-          {loading.completed ? (
-            <Row className="justify-content-center my-5">
-              <Col xs={12} className="text-center">
-                <Spinner animation="border" variant="primary" className="mb-3" />
-                <p>Loading completed inventory...</p>
               </Col>
             </Row>
-          ) : completedData.length === 0 ? (
-            <Alert variant="info" className="mb-4">
-              <CsLineIcons icon="inbox" className="me-2" />
-              {completedSearchTerm || getCompletedActiveFilterCount() > 0
-                ? 'No results found. Try adjusting your search or filters.'
-                : 'No completed inventory found.'}
-            </Alert>
-          ) : (
-            <Row>
-              <Col xs="12" style={{ overflow: 'auto' }}>
-                <Table className="react-table rows" tableInstance={completedTable} />
-              </Col>
-              <Col xs="12">
-                <TablePagination paginationProps={completedPaginationProps} />
-              </Col>
-            </Row>
-          )}
 
-          {/* Rejected Requests */}
-          <h4 className="mt-5 mb-3">
-            Rejected Requests
-            <span className="text-muted ms-2">({rejectedTotalRecords})</span>
-          </h4>
+            {/* Completed Filters */}
+            <Collapse in={showCompletedFilters}>
+              <Card className="mb-3 border-0 bg-light">
+                <Card.Body>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <h5 className="fw-bold mb-0">Filters</h5>
+                    {getCompletedActiveFilterCount() > 0 && (
+                      <Button variant="outline-danger" size="sm" onClick={handleClearCompletedFilters}>
+                        <CsLineIcons icon="close" className="me-1" />
+                        Clear
+                      </Button>
+                    )}
+                  </div>
 
-          {/* Search and controls - Always visible */}
-          <Row className="mb-3">
-            <Col sm="12" md="5" lg="3" xxl="2">
-              <div className="d-flex gap-2">
-                <div className="search-input-container w-100 shadow bg-foreground">
-                  <ControlsSearch onSearch={handleRejectedSearch} />
+                  <div className="mt-2">
+                    <Row>
+                      {/* Request Date Range */}
+                      <Col md={4} className="mb-3">
+                        <Form.Label className="small text-muted fw-bold">Request Date Range</Form.Label>
+                        <Row>
+                          <Col md={6}>
+                            <Form.Label className="small text-muted">From</Form.Label>
+                            <Form.Control
+                              type="date"
+                              className="modern-input"
+                              value={completedFilters.requestFromDate}
+                              onChange={(e) => handleCompletedFilterChange('requestFromDate', e.target.value)}
+                            />
+                          </Col>
+                          <Col md={6}>
+                            <Form.Label className="small text-muted">To</Form.Label>
+                            <Form.Control
+                              type="date"
+                              className="modern-input"
+                              value={completedFilters.requestToDate}
+                              onChange={(e) => handleCompletedFilterChange('requestToDate', e.target.value)}
+                            />
+                          </Col>
+                        </Row>
+                      </Col>
+
+                      {/* Bill Date Range */}
+                      <Col md={4} className="mb-3">
+                        <Form.Label className="small text-muted fw-bold">Bill Date Range</Form.Label>
+                        <Row>
+                          <Col md={6}>
+                            <Form.Label className="small text-muted">From</Form.Label>
+                            <Form.Control
+                              type="date"
+                              className="modern-input"
+                              value={completedFilters.billFromDate}
+                              onChange={(e) => handleCompletedFilterChange('billFromDate', e.target.value)}
+                            />
+                          </Col>
+                          <Col md={6}>
+                            <Form.Label className="small text-muted">To</Form.Label>
+                            <Form.Control
+                              type="date"
+                              className="modern-input"
+                              value={completedFilters.billToDate}
+                              onChange={(e) => handleCompletedFilterChange('billToDate', e.target.value)}
+                            />
+                          </Col>
+                        </Row>
+                      </Col>
+                    </Row>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Collapse>
+
+            {loading.completed ? (
+              <Row className="justify-content-center my-5">
+                <Col xs={12} className="text-center">
+                  <Spinner animation="border" variant="primary" className="mb-3" />
+                  <p>Loading completed inventory...</p>
+                </Col>
+              </Row>
+            ) : completedData.length === 0 ? (
+              <Alert variant="info" className="mb-4">
+                <CsLineIcons icon="inbox" className="me-2" />
+                {completedSearchTerm || getCompletedActiveFilterCount() > 0
+                  ? 'No results found. Try adjusting your search or filters.'
+                  : 'No completed inventory found.'}
+              </Alert>
+            ) : (
+              <Row>
+                <Col xs="12" className="table-scroll-container">
+                  <Table className="react-table rows table-reconcile" tableInstance={completedTable} />
+                </Col>
+                <Col xs="12">
+                  <TablePagination paginationProps={completedPaginationProps} />
+                </Col>
+              </Row>
+            )}
+          </Card.Body>
+        </Card>
+
+        {/* Rejected Requests */}
+        <Card className="workstation-card border-0 mb-4">
+          <Card.Body className="p-4">
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h4 className="fw-bold mb-0 text-dark">
+                Rejected Requests
+                <span className="text-muted ms-2">({rejectedTotalRecords})</span>
+              </h4>
+            </div>
+
+            {/* Search and controls - Always visible */}
+            <Row className="mb-3">
+              <Col sm="12" md="5" lg="3" xxl="2">
+                <div className="d-flex gap-2">
+                  <div className="search-input-container w-100 shadow bg-foreground">
+                    <ControlsSearch onSearch={handleRejectedSearch} />
+                  </div>
+                  <Button
+                    variant={`${showRejectedFilters ? 'secondary' : 'outline-secondary'}`}
+                    size="sm"
+                    className="btn-icon btn-icon-only position-relative"
+                    onClick={() => setShowRejectedFilters(!showRejectedFilters)}
+                    title="Filters"
+                  >
+                    <CsLineIcons icon={`${showRejectedFilters ? 'close' : 'filter'}`} />
+                    {getRejectedActiveFilterCount() > 0 && (
+                      <Badge bg="primary" className="position-absolute top-0 start-100 translate-middle">
+                        {getRejectedActiveFilterCount()}
+                      </Badge>
+                    )}
+                  </Button>
                 </div>
-                <Button
-                  variant={`${showRejectedFilters ? 'secondary' : 'outline-secondary'}`}
-                  size="sm"
-                  className="btn-icon btn-icon-only position-relative"
-                  onClick={() => setShowRejectedFilters(!showRejectedFilters)}
-                  title="Filters"
-                >
-                  <CsLineIcons icon={`${showRejectedFilters ? 'close' : 'filter'}`} />
-                  {getRejectedActiveFilterCount() > 0 && (
-                    <Badge bg="primary" className="position-absolute top-0 start-100 translate-middle">
-                      {getRejectedActiveFilterCount()}
-                    </Badge>
+              </Col>
+              <Col sm="12" md="7" lg="9" xxl="10" className="text-end">
+                <div className="d-inline-block me-2 text-muted">
+                  {loading.rejected ? (
+                    'Loading...'
+                  ) : (
+                    <>
+                      Showing {rejectedData.length > 0 ? rejectedPageIndex * rejectedPageSize + 1 : 0} to{' '}
+                      {Math.min((rejectedPageIndex + 1) * rejectedPageSize, rejectedTotalRecords)} of {rejectedTotalRecords} entries
+                    </>
                   )}
-                </Button>
-              </div>
-            </Col>
-            <Col sm="12" md="7" lg="9" xxl="10" className="text-end">
-              <div className="d-inline-block me-2 text-muted">
-                {loading.rejected ? (
-                  'Loading...'
-                ) : (
-                  <>
-                    Showing {rejectedData.length > 0 ? rejectedPageIndex * rejectedPageSize + 1 : 0} to{' '}
-                    {Math.min((rejectedPageIndex + 1) * rejectedPageSize, rejectedTotalRecords)} of {rejectedTotalRecords} entries
-                  </>
-                )}
-              </div>
-              <div className="d-inline-block">
-                <ControlsPageSize pageSize={rejectedPageSize} onPageSizeChange={handleRejectedPageSizeChange} />
-              </div>
-            </Col>
-          </Row>
-
-          {/* Rejected Filters */}
-          <Collapse in={showRejectedFilters}>
-            <Card className="mb-3">
-              <Card.Body>
-                <div className="d-flex justify-content-between align-items-center">
-                  <h5>Filters</h5>
-                  {getRejectedActiveFilterCount() > 0 && (
-                    <Button variant="outline-danger" size="sm" onClick={handleClearRejectedFilters}>
-                      <CsLineIcons icon="close" className="me-1" />
-                      Clear
-                    </Button>
-                  )}
                 </div>
-
-                <div className="mt-2">
-                  <Row>
-                    {/* Request Date Range */}
-                    <Col md={4} className="mb-3">
-                      <Form.Label className="small text-muted fw-bold">Request Date Range</Form.Label>
-                      <Row>
-                        <Col md={6}>
-                          <Form.Label className="small text-muted">From</Form.Label>
-                          <Form.Control
-                            type="date"
-                            size="sm"
-                            value={rejectedFilters.requestFromDate}
-                            onChange={(e) => handleRejectedFilterChange('requestFromDate', e.target.value)}
-                          />
-                        </Col>
-                        <Col md={6}>
-                          <Form.Label className="small text-muted">To</Form.Label>
-                          <Form.Control
-                            type="date"
-                            size="sm"
-                            value={rejectedFilters.requestToDate}
-                            onChange={(e) => handleRejectedFilterChange('requestToDate', e.target.value)}
-                          />
-                        </Col>
-                      </Row>
-                    </Col>
-
-                    {/* Bill Date Range */}
-                    <Col md={4} className="mb-3">
-                      <Form.Label className="small text-muted fw-bold">Bill Date Range</Form.Label>
-                      <Row>
-                        <Col md={6}>
-                          <Form.Label className="small text-muted">From</Form.Label>
-                          <Form.Control
-                            type="date"
-                            size="sm"
-                            value={rejectedFilters.billFromDate}
-                            onChange={(e) => handleRejectedFilterChange('billFromDate', e.target.value)}
-                          />
-                        </Col>
-                        <Col md={6}>
-                          <Form.Label className="small text-muted">To</Form.Label>
-                          <Form.Control
-                            type="date"
-                            size="sm"
-                            value={rejectedFilters.billToDate}
-                            onChange={(e) => handleRejectedFilterChange('billToDate', e.target.value)}
-                          />
-                        </Col>
-                      </Row>
-                    </Col>
-                  </Row>
+                <div className="d-inline-block">
+                  <ControlsPageSize pageSize={rejectedPageSize} onPageSizeChange={handleRejectedPageSizeChange} />
                 </div>
-              </Card.Body>
-            </Card>
-          </Collapse>
-
-          {loading.rejected ? (
-            <Row className="justify-content-center my-5">
-              <Col xs={12} className="text-center">
-                <Spinner animation="border" variant="danger" className="mb-3" />
-                <p>Loading...</p>
               </Col>
             </Row>
-          ) : rejectedData.length === 0 ? (
-            <Alert variant="info" className="mb-4">
-              <CsLineIcons icon="inbox" className="me-2" />
-              {rejectedSearchTerm || getRejectedActiveFilterCount() > 0
-                ? 'No results found. Try adjusting your search or filters.'
-                : 'No rejected inventory found.'}
-            </Alert>
-          ) : (
-            <Row>
-              <Col xs="12" style={{ overflow: 'auto' }}>
-                <Table className="react-table rows" tableInstance={rejectedTable} />
-              </Col>
-              <Col xs="12">
-                <TablePagination paginationProps={rejectedPaginationProps} />
-              </Col>
-            </Row>
-          )}
-        </Col>
-      </Row>
+
+            {/* Rejected Filters */}
+            <Collapse in={showRejectedFilters}>
+              <Card className="mb-3 border-0 bg-light">
+                <Card.Body>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <h5 className="fw-bold mb-0">Filters</h5>
+                    {getRejectedActiveFilterCount() > 0 && (
+                      <Button variant="outline-danger" size="sm" onClick={handleClearRejectedFilters}>
+                        <CsLineIcons icon="close" className="me-1" />
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="mt-2">
+                    <Row>
+                      {/* Request Date Range */}
+                      <Col md={4} className="mb-3">
+                        <Form.Label className="small text-muted fw-bold">Request Date Range</Form.Label>
+                        <Row>
+                          <Col md={6}>
+                            <Form.Label className="small text-muted">From</Form.Label>
+                            <Form.Control
+                              type="date"
+                              className="modern-input"
+                              value={rejectedFilters.requestFromDate}
+                              onChange={(e) => handleRejectedFilterChange('requestFromDate', e.target.value)}
+                            />
+                          </Col>
+                          <Col md={6}>
+                            <Form.Label className="small text-muted">To</Form.Label>
+                            <Form.Control
+                              type="date"
+                              className="modern-input"
+                              value={rejectedFilters.requestToDate}
+                              onChange={(e) => handleRejectedFilterChange('requestToDate', e.target.value)}
+                            />
+                          </Col>
+                        </Row>
+                      </Col>
+
+                      {/* Bill Date Range */}
+                      <Col md={4} className="mb-3">
+                        <Form.Label className="small text-muted fw-bold">Bill Date Range</Form.Label>
+                        <Row>
+                          <Col md={6}>
+                            <Form.Label className="small text-muted">From</Form.Label>
+                            <Form.Control
+                              type="date"
+                              className="modern-input"
+                              value={rejectedFilters.billFromDate}
+                              onChange={(e) => handleRejectedFilterChange('billFromDate', e.target.value)}
+                            />
+                          </Col>
+                          <Col md={6}>
+                            <Form.Label className="small text-muted">To</Form.Label>
+                            <Form.Control
+                              type="date"
+                              className="modern-input"
+                              value={rejectedFilters.billToDate}
+                              onChange={(e) => handleRejectedFilterChange('billToDate', e.target.value)}
+                            />
+                          </Col>
+                        </Row>
+                      </Col>
+                    </Row>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Collapse>
+
+            {loading.rejected ? (
+              <Row className="justify-content-center my-5">
+                <Col xs={12} className="text-center">
+                  <Spinner animation="border" variant="danger" className="mb-3" />
+                  <p>Loading...</p>
+                </Col>
+              </Row>
+            ) : rejectedData.length === 0 ? (
+              <Alert variant="info" className="mb-4">
+                <CsLineIcons icon="inbox" className="me-2" />
+                {rejectedSearchTerm || getRejectedActiveFilterCount() > 0
+                  ? 'No results found. Try adjusting your search or filters.'
+                  : 'No rejected inventory found.'}
+              </Alert>
+            ) : (
+              <Row>
+                <Col xs="12" className="table-scroll-container">
+                  <Table className="react-table rows table-reconcile" tableInstance={rejectedTable} />
+                </Col>
+                <Col xs="12">
+                  <TablePagination paginationProps={rejectedPaginationProps} />
+                </Col>
+              </Row>
+            )}
+          </Card.Body>
+        </Card>
+      </div>
 
       {/* Delete Inventory Modal */}
-      <Modal show={show} onHide={handleClose} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Delete Inventory?</Modal.Title>
+      <Modal show={show} onHide={handleClose} centered backdrop="static">
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold text-danger">Delete Inventory?</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <p>Delete this inventory item permanently</p>
+        <Modal.Body className="py-4">
+          <div className="d-flex align-items-center mb-3">
+            <div className="delete-modal-icon-container">
+              <CsLineIcons icon="bin" size="24" className="delete-modal-icon" />
+            </div>
+            <div>
+              <p className="mb-0 fw-bold text-dark">Permanently delete this record?</p>
+              <p className="mb-1 text-muted small">This clears the inventory request log from history.</p>
+            </div>
+          </div>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="dark" onClick={handleClose} disabled={isDeleting}>
+        <Modal.Footer className="border-0 pt-0">
+          <Button variant="light" className="rounded-pill px-4 fw-bold border-0 text-muted" onClick={handleClose} disabled={isDeleting}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
+          <Button variant="danger" className="rounded-pill px-4 fw-bold shadow-sm" onClick={handleDelete} disabled={isDeleting}>
             {isDeleting ? (
               <>
                 <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
@@ -856,21 +874,21 @@ const InventoryHistory = () => {
 
       {/* Reject Reason Modal */}
       <Modal show={showRejectReasonModal} onHide={() => setShowRejectReasonModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Reject Reason</Modal.Title>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold text-danger">Reject Reason</Modal.Title>
         </Modal.Header>
 
-        <Modal.Body style={{ maxHeight: '300px', overflowY: 'auto' }}>
-          <p className="mb-0">{selectedRejectReason}</p>
+        <Modal.Body className="modal-body-scroll">
+          <p className="mb-0 text-dark">{selectedRejectReason}</p>
         </Modal.Body>
 
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowRejectReasonModal(false)}>
+        <Modal.Footer className="border-0 pt-0">
+          <Button variant="light" className="rounded-pill px-4 fw-bold border-0 text-muted" onClick={() => setShowRejectReasonModal(false)}>
             Close
           </Button>
         </Modal.Footer>
       </Modal>
-    </>
+    </div>
   );
 };
 

@@ -3,6 +3,7 @@ import { useParams, useHistory } from 'react-router-dom';
 import { Row, Col, Card, Button, Form, Spinner, Alert } from 'react-bootstrap';
 import BreadcrumbList from 'components/breadcrumb-list/BreadcrumbList';
 import HtmlHead from 'components/html-head/HtmlHead';
+import CsLineIcons from 'cs-line-icons/CsLineIcons';
 import axios from 'axios';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -194,363 +195,370 @@ const EditInventory = () => {
 
   if (loading) {
     return (
-      <Row className="justify-content-center align-items-center min-vh-100">
-        <Col xs={12} className="text-center">
-          <Spinner animation="border" variant="primary" className="mb-3" />
-          <h5>Loading...</h5>
-        </Col>
-      </Row>
+      <div className="workstation-container pb-5">
+        <div className="container-fluid ps-lg-4 pe-lg-5">
+          <Row className="justify-content-center align-items-center min-vh-100">
+            <Col xs={12} className="text-center">
+              <Spinner animation="border" variant="primary" className="mb-3" />
+              <h5>Loading...</h5>
+            </Col>
+          </Row>
+        </div>
+      </div>
     );
   }
 
   return (
-    <>
-      <HtmlHead title={title} description={description} />
-      <Row>
-        <Col>
-          <div className="page-title-container">
-            <h1 className="mb-0 pb-0 display-4">Edit Inventory</h1>
-            <BreadcrumbList items={breadcrumbs} />
-          </div>
+    <div className="workstation-container pb-5">
+      <div className="container-fluid ps-lg-4 pe-lg-5">
+        <HtmlHead title={title} description={description} />
+        <Row>
+          <Col>
+            <div className="page-title-container mb-4 mt-2 mt-lg-0">
+              <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>{title}</h1>
+              <BreadcrumbList items={breadcrumbs} />
+            </div>
 
-          <Form onSubmit={handleSubmit}>
-            <Card body className="mb-4">
-              <h5 className="mb-3">Purchase Details</h5>
-              <Row>
-                <Col md={6}>
-                  <Form.Group>
-                    <Form.Label>Bill Date</Form.Label>
-                    <Form.Control
-                      type="date"
-                      name="bill_date"
-                      value={values.bill_date}
-                      onChange={handleChange}
-                      isInvalid={touched.bill_date && errors.bill_date}
-                      disabled={isSubmitting}
-                    />
-                    <Form.Control.Feedback type="invalid">{errors.bill_date}</Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group>
-                    <Form.Label>Bill Number</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="bill_number"
-                      value={values.bill_number}
-                      onChange={handleChange}
-                      isInvalid={touched.bill_number && errors.bill_number}
-                      disabled={isSubmitting}
-                    />
-                    <Form.Control.Feedback type="invalid">{errors.bill_number}</Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
-              </Row>
+            <Form onSubmit={handleSubmit}>
+              <Card body className="mb-4">
+                <h5 className="mb-3">Purchase Details</h5>
+                <Row>
+                  <Col md={6}>
+                    <Form.Group>
+                      <Form.Label>Bill Date</Form.Label>
+                      <Form.Control
+                        type="date"
+                        name="bill_date"
+                        value={values.bill_date}
+                        onChange={handleChange}
+                        isInvalid={touched.bill_date && errors.bill_date}
+                        disabled={isSubmitting}
+                      />
+                      <Form.Control.Feedback type="invalid">{errors.bill_date}</Form.Control.Feedback>
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group>
+                      <Form.Label>Bill Number</Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="bill_number"
+                        value={values.bill_number}
+                        onChange={handleChange}
+                        isInvalid={touched.bill_number && errors.bill_number}
+                        disabled={isSubmitting}
+                      />
+                      <Form.Control.Feedback type="invalid">{errors.bill_number}</Form.Control.Feedback>
+                    </Form.Group>
+                  </Col>
+                </Row>
 
-              <Row className="mt-3">
-                <Col md={6}>
-                  <Form.Group>
-                    <Form.Label>Vendor Name</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="vendor_name"
-                      value={values.vendor_name}
-                      onChange={handleChange}
-                      isInvalid={touched.vendor_name && errors.vendor_name}
-                      disabled={isSubmitting}
-                    />
-                    <Form.Control.Feedback type="invalid">{errors.vendor_name}</Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group>
-                    <Form.Label>Category</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="category"
-                      value={values.category}
-                      onChange={handleChange}
-                      isInvalid={touched.category && errors.category}
-                      disabled={isSubmitting}
-                    />
-                    <Form.Control.Feedback type="invalid">{errors.category}</Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
-              </Row>
+                <Row className="mt-3">
+                  <Col md={6}>
+                    <Form.Group>
+                      <Form.Label>Vendor Name</Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="vendor_name"
+                        value={values.vendor_name}
+                        onChange={handleChange}
+                        isInvalid={touched.vendor_name && errors.vendor_name}
+                        disabled={isSubmitting}
+                      />
+                      <Form.Control.Feedback type="invalid">{errors.vendor_name}</Form.Control.Feedback>
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group>
+                      <Form.Label>Category</Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="category"
+                        value={values.category}
+                        onChange={handleChange}
+                        isInvalid={touched.category && errors.category}
+                        disabled={isSubmitting}
+                      />
+                      <Form.Control.Feedback type="invalid">{errors.category}</Form.Control.Feedback>
+                    </Form.Group>
+                  </Col>
+                </Row>
 
-              <Row className="mt-3">
-                <Col md={6}>
-                  <Form.Group>
-                    <Form.Label>Bill Files</Form.Label>
-                    <Form.Control
-                      type="file"
-                      accept="image/*,application/pdf"
-                      multiple
-                      onChange={handleFileChange}
-                      isInvalid={touched.bill_files && errors.bill_files}
-                      disabled={isSubmitting}
-                    />
-                    <Form.Control.Feedback type="invalid">{errors.bill_files}</Form.Control.Feedback>
-                  </Form.Group>
-                  <div className="d-flex flex-wrap mt-2">
-                    {filePreviews.map((file, i) => {
-                      const src = file.type === 'existing' ? `${process.env.REACT_APP_UPLOAD_DIR}${file.name}` : file.src;
-                      const isImage = file.type === 'existing' ? file.name.match(/\.(jpeg|jpg|png|gif|webp)$/i) : file.type === 'image';
+                <Row className="mt-3">
+                  <Col md={6}>
+                    <Form.Group>
+                      <Form.Label>Bill Files</Form.Label>
+                      <Form.Control
+                        type="file"
+                        accept="image/*,application/pdf"
+                        multiple
+                        onChange={handleFileChange}
+                        isInvalid={touched.bill_files && errors.bill_files}
+                        disabled={isSubmitting}
+                      />
+                      <Form.Control.Feedback type="invalid">{errors.bill_files}</Form.Control.Feedback>
+                    </Form.Group>
+                    <div className="d-flex flex-wrap mt-2">
+                      {filePreviews.map((file, i) => {
+                        const src = file.type === 'existing' ? `${process.env.REACT_APP_UPLOAD_DIR}${file.name}` : file.src;
+                        const isImage = file.type === 'existing' ? file.name.match(/\.(jpeg|jpg|png|gif|webp)$/i) : file.type === 'image';
 
-                      return (
-                        <div key={i} className="me-2">
-                          {isImage ? <img src={src} alt={file.name} width="80" height="80" /> : <iframe src={src} title={file.name} width="80" height="80" />}
-                          <div style={{ fontSize: '10px' }}>{file.name}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </Col>
-              </Row>
-            </Card>
+                        return (
+                          <div key={i} className="me-2">
+                            {isImage ? <img src={src} alt={file.name} width="80" height="80" /> : <iframe src={src} title={file.name} width="80" height="80" />}
+                            <div style={{ fontSize: '10px' }}>{file.name}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Col>
+                </Row>
+              </Card>
 
-            <Card body className="mb-4">
-              <h5 className="mb-3">Item Details</h5>
-              {values.items.map((item, index) => {
-                const itemErrors = errors.items?.[index] || {};
-                const itemTouched = touched.items?.[index] || {};
+              <Card body className="mb-4">
+                <h5 className="mb-3">Item Details</h5>
+                {values.items.map((item, index) => {
+                  const itemErrors = errors.items?.[index] || {};
+                  const itemTouched = touched.items?.[index] || {};
 
-                return (
-                  <Row key={index} className="mb-3">
-                    <Col md={3}>
-                      <Form.Group>
-                        <Form.Control
-                          type="text"
-                          placeholder="Item Name"
-                          value={item.item_name}
-                          onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
-                          isInvalid={itemTouched.item_name && itemErrors.item_name}
-                          disabled={isSubmitting}
-                        />
-                        <Form.Control.Feedback type="invalid">{itemErrors.item_name}</Form.Control.Feedback>
-                      </Form.Group>
-                    </Col>
-                    <Col md={2}>
-                      <Form.Group>
-                        <Form.Control
-                          type="number"
-                          placeholder="Quantity"
-                          value={item.item_quantity}
-                          onChange={(e) => handleItemChange(index, 'item_quantity', e.target.value)}
-                          isInvalid={itemTouched.item_quantity && itemErrors.item_quantity}
-                          disabled={isSubmitting}
-                        />
-                        <Form.Control.Feedback type="invalid">{itemErrors.item_quantity}</Form.Control.Feedback>
-                      </Form.Group>
-                    </Col>
-                    <Col md={2}>
-                      <Form.Group>
-                        <Form.Select
-                          value={item.unit}
-                          onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
-                          isInvalid={itemTouched.unit && itemErrors.unit}
-                          disabled={isSubmitting}
+                  return (
+                    <Row key={index} className="mb-3">
+                      <Col md={3}>
+                        <Form.Group>
+                          <Form.Control
+                            type="text"
+                            placeholder="Item Name"
+                            value={item.item_name}
+                            onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
+                            isInvalid={itemTouched.item_name && itemErrors.item_name}
+                            disabled={isSubmitting}
+                          />
+                          <Form.Control.Feedback type="invalid">{itemErrors.item_name}</Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+                      <Col md={2}>
+                        <Form.Group>
+                          <Form.Control
+                            type="number"
+                            placeholder="Quantity"
+                            value={item.item_quantity}
+                            onChange={(e) => handleItemChange(index, 'item_quantity', e.target.value)}
+                            isInvalid={itemTouched.item_quantity && itemErrors.item_quantity}
+                            disabled={isSubmitting}
+                          />
+                          <Form.Control.Feedback type="invalid">{itemErrors.item_quantity}</Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+                      <Col md={2}>
+                        <Form.Group>
+                          <Form.Select
+                            value={item.unit}
+                            onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
+                            isInvalid={itemTouched.unit && itemErrors.unit}
+                            disabled={isSubmitting}
+                          >
+                            <option value="">Unit</option>
+                            <option value="kg">kg</option>
+                            <option value="g">g</option>
+                            <option value="litre">litre</option>
+                            <option value="ml">ml</option>
+                            <option value="piece">piece</option>
+                          </Form.Select>
+                          <Form.Control.Feedback type="invalid">{itemErrors.unit}</Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+                      <Col md={3}>
+                        <Form.Group>
+                          <Form.Control
+                            type="number"
+                            placeholder="Item Price"
+                            value={item.item_price}
+                            onChange={(e) => handleItemChange(index, 'item_price', e.target.value)}
+                            isInvalid={itemTouched.item_price && itemErrors.item_price}
+                            disabled={isSubmitting}
+                          />
+                          <Form.Control.Feedback type="invalid">{itemErrors.item_price}</Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+                      <Col md={2} className="d-flex align-items-center">
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => removeItem(index)}
+                          disabled={isSubmitting || values.items.length === 1}
                         >
-                          <option value="">Unit</option>
-                          <option value="kg">kg</option>
-                          <option value="g">g</option>
-                          <option value="litre">litre</option>
-                          <option value="ml">ml</option>
-                          <option value="piece">piece</option>
-                        </Form.Select>
-                        <Form.Control.Feedback type="invalid">{itemErrors.unit}</Form.Control.Feedback>
-                      </Form.Group>
-                    </Col>
-                    <Col md={3}>
-                      <Form.Group>
-                        <Form.Control
-                          type="number"
-                          placeholder="Item Price"
-                          value={item.item_price}
-                          onChange={(e) => handleItemChange(index, 'item_price', e.target.value)}
-                          isInvalid={itemTouched.item_price && itemErrors.item_price}
-                          disabled={isSubmitting}
-                        />
-                        <Form.Control.Feedback type="invalid">{itemErrors.item_price}</Form.Control.Feedback>
-                      </Form.Group>
-                    </Col>
-                    <Col md={2} className="d-flex align-items-center">
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() => removeItem(index)}
-                        disabled={isSubmitting || values.items.length === 1}
-                      >
-                        Remove
-                      </Button>
-                    </Col>
-                  </Row>
-                );
-              })}
+                          Remove
+                        </Button>
+                      </Col>
+                    </Row>
+                  );
+                })}
 
-              <Button variant="primary" onClick={addItem} disabled={isSubmitting}>
-                + Add
-              </Button>
+                <Button variant="primary" className="btn-capsule btn-capsule-sm" onClick={addItem} disabled={isSubmitting}>
+                  <CsLineIcons icon="plus" className="me-1" size="14" />
+                  Add Item
+                </Button>
 
-              {/* 🔥 NEW: Financial Summary Section */}
-              <Row className="mt-4">
-                <Col md={12}>
-                  <h5 className="mb-3">Financial Summary</h5>
-                </Col>
-              </Row>
+                {/* 🔥 NEW: Financial Summary Section */}
+                <Row className="mt-4">
+                  <Col md={12}>
+                    <h5 className="mb-3">Financial Summary</h5>
+                  </Col>
+                </Row>
 
-              <Row className="mt-3">
-                <Col md={4}>
-                  <Form.Group>
-                    <Form.Label>Sub Total</Form.Label>
-                    <Form.Control
-                      type="number"
-                      value={values.sub_total}
-                      readOnly
-                      className="bg-light"
-                    />
-                    <Form.Text className="text-muted">
-                      Sum of all item prices
-                    </Form.Text>
-                  </Form.Group>
-                </Col>
-                <Col md={4}>
-                  <Form.Group>
-                    <Form.Label>Tax Amount (₹)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      name="tax"
-                      value={values.tax}
-                      onChange={handleChange}
-                      isInvalid={touched.tax && errors.tax}
-                      disabled={isSubmitting}
-                      min="0"
-                      step="0.01"
-                    />
-                    <Form.Control.Feedback type="invalid">{errors.tax}</Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
-                <Col md={4}>
-                  <Form.Group>
-                    <Form.Label>Discount (₹)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      name="discount"
-                      value={values.discount}
-                      onChange={handleChange}
-                      isInvalid={touched.discount && errors.discount}
-                      disabled={isSubmitting}
-                      min="0"
-                      step="0.01"
-                    />
-                    <Form.Control.Feedback type="invalid">{errors.discount}</Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
-              </Row>
-
-              <Row className="mt-3">
-                <Col md={4}>
-                  <Form.Group>
-                    <Form.Label>
-                      <strong>Total Amount</strong>
-                    </Form.Label>
-                    <Form.Control
-                      type="number"
-                      value={values.total_amount}
-                      readOnly
-                      className="bg-light fw-bold"
-                    />
-                    <Form.Text className="text-muted">
-                      Sub Total + Tax - Discount
-                    </Form.Text>
-                  </Form.Group>
-                </Col>
-                <Col md={4}>
-                  <Form.Group>
-                    <Form.Label>Paid Amount</Form.Label>
-                    <Form.Control
-                      type="number"
-                      name="paid_amount"
-                      value={values.paid_amount}
-                      onChange={handleChange}
-                      isInvalid={touched.paid_amount && errors.paid_amount}
-                      disabled={isSubmitting}
-                    />
-                    <Form.Control.Feedback type="invalid">{errors.paid_amount}</Form.Control.Feedback>
-                  </Form.Group>
-                </Col>
-                <Col md={4}>
-                  <Form.Group>
-                    <Form.Label>Unpaid Amount</Form.Label>
-                    <div className="position-relative">
+                <Row className="mt-3">
+                  <Col md={4}>
+                    <Form.Group>
+                      <Form.Label>Sub Total</Form.Label>
                       <Form.Control
                         type="number"
-                        value={values.unpaid_amount}
+                        value={values.sub_total}
                         readOnly
                         className="bg-light"
                       />
-                      {isCalculating && (
-                        <Spinner
-                          animation="border"
-                          size="sm"
-                          className="position-absolute"
-                          style={{ right: '10px', top: '50%', transform: 'translateY(-50%)' }}
+                      <Form.Text className="text-muted">
+                        Sum of all item prices
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group>
+                      <Form.Label>Tax Amount (₹)</Form.Label>
+                      <Form.Control
+                        type="number"
+                        name="tax"
+                        value={values.tax}
+                        onChange={handleChange}
+                        isInvalid={touched.tax && errors.tax}
+                        disabled={isSubmitting}
+                        min="0"
+                        step="0.01"
+                      />
+                      <Form.Control.Feedback type="invalid">{errors.tax}</Form.Control.Feedback>
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group>
+                      <Form.Label>Discount (₹)</Form.Label>
+                      <Form.Control
+                        type="number"
+                        name="discount"
+                        value={values.discount}
+                        onChange={handleChange}
+                        isInvalid={touched.discount && errors.discount}
+                        disabled={isSubmitting}
+                        min="0"
+                        step="0.01"
+                      />
+                      <Form.Control.Feedback type="invalid">{errors.discount}</Form.Control.Feedback>
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <Row className="mt-3">
+                  <Col md={4}>
+                    <Form.Group>
+                      <Form.Label>
+                        <strong>Total Amount</strong>
+                      </Form.Label>
+                      <Form.Control
+                        type="number"
+                        value={values.total_amount}
+                        readOnly
+                        className="bg-light fw-bold"
+                      />
+                      <Form.Text className="text-muted">
+                        Sub Total + Tax - Discount
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group>
+                      <Form.Label>Paid Amount</Form.Label>
+                      <Form.Control
+                        type="number"
+                        name="paid_amount"
+                        value={values.paid_amount}
+                        onChange={handleChange}
+                        isInvalid={touched.paid_amount && errors.paid_amount}
+                        disabled={isSubmitting}
+                      />
+                      <Form.Control.Feedback type="invalid">{errors.paid_amount}</Form.Control.Feedback>
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group>
+                      <Form.Label>Unpaid Amount</Form.Label>
+                      <div className="position-relative">
+                        <Form.Control
+                          type="number"
+                          value={values.unpaid_amount}
+                          readOnly
+                          className="bg-light"
                         />
-                      )}
-                    </div>
-                  </Form.Group>
-                </Col>
-              </Row>
-            </Card>
-
-            <Button
-              variant="success"
-              type="submit"
-              disabled={isSubmitting}
-              style={{ minWidth: '150px' }}
-            >
-              {isSubmitting ? (
-                <>
-                  <Spinner
-                    as="span"
-                    animation="border"
-                    size="sm"
-                    role="status"
-                    aria-hidden="true"
-                    className="me-2"
-                  />
-                  Updating...
-                </>
-              ) : 'Update'}
-            </Button>
-          </Form>
-
-          {isSubmitting && (
-            <div
-              className="position-fixed top-0 left-0 w-100 h-100 d-flex justify-content-center align-items-center"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                zIndex: 9999,
-                backdropFilter: 'blur(2px)'
-              }}
-            >
-              <Card className="shadow-lg border-0" style={{ minWidth: '200px' }}>
-                <Card.Body className="text-center p-4">
-                  <Spinner
-                    animation="border"
-                    variant="success"
-                    className="mb-3"
-                    style={{ width: '3rem', height: '3rem' }}
-                  />
-                  <h5 className="mb-0">Updating Inventory...</h5>
-                  <small className="text-muted">Please wait a moment</small>
-                </Card.Body>
+                        {isCalculating && (
+                          <Spinner
+                            animation="border"
+                            size="sm"
+                            className="position-absolute"
+                            style={{ right: '10px', top: '50%', transform: 'translateY(-50%)' }}
+                          />
+                        )}
+                      </div>
+                    </Form.Group>
+                  </Col>
+                </Row>
               </Card>
-            </div>
-          )}
-        </Col>
-      </Row>
-    </>
+
+              <Button
+                variant="success"
+                type="submit"
+                disabled={isSubmitting}
+                className="btn-capsule btn-capsule-sm px-4"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Spinner
+                      as="span"
+                      animation="border"
+                      size="sm"
+                      role="status"
+                      aria-hidden="true"
+                      className="me-2"
+                    />
+                    Updating...
+                  </>
+                ) : 'Update'}
+              </Button>
+            </Form>
+
+            {isSubmitting && (
+              <div
+                className="position-fixed top-0 left-0 w-100 h-100 d-flex justify-content-center align-items-center"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                  zIndex: 9999,
+                  backdropFilter: 'blur(2px)'
+                }}
+              >
+                <Card className="shadow-lg border-0" style={{ minWidth: '200px' }}>
+                  <Card.Body className="text-center p-4">
+                    <Spinner
+                      animation="border"
+                      variant="success"
+                      className="mb-3"
+                      style={{ width: '3rem', height: '3rem' }}
+                    />
+                    <h5 className="mb-0">Updating Inventory...</h5>
+                    <small className="text-muted">Please wait a moment</small>
+                  </Card.Body>
+                </Card>
+              </div>
+            )}
+          </Col>
+        </Row>
+      </div>
+    </div>
   );
 };
 

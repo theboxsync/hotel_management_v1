@@ -100,61 +100,73 @@ const EditBooking = () => {
 
     if (loading) {
         return (
-            <>
-                <HtmlHead title={title} description={description} />
-                <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
-                    <Spinner animation="border" variant="primary" />
+            <div className="workstation-container pb-5">
+                <div className="container-fluid ps-lg-4 pe-lg-5">
+                    <HtmlHead title={title} description={description} />
+                    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+                        <Spinner animation="border" variant="primary" />
+                    </div>
                 </div>
-            </>
+            </div>
         );
     }
 
     if (!booking) {
         return (
-            <>
-                <HtmlHead title={title} description={description} />
-                <Alert variant="danger">Booking not found</Alert>
-            </>
+            <div className="workstation-container pb-5">
+                <div className="container-fluid ps-lg-4 pe-lg-5">
+                    <HtmlHead title={title} description={description} />
+                    <Alert variant="danger">Booking not found</Alert>
+                </div>
+            </div>
         );
     }
 
     // Check if booking can be edited
     if (!['confirmed', 'checked_in'].includes(booking.booking.booking_status)) {
         return (
-            <>
-                <HtmlHead title={title} description={description} />
-                <Alert variant="warning">
-                    <CsLineIcons icon="alert-circle" className="me-2" />
-                    This booking cannot be edited because its status is "{booking.booking.booking_status}".
-                    <div className="mt-3">
-                        <Button variant="outline-secondary" onClick={() => history.push('/operations/bookings')}>
-                            Back to Bookings
-                        </Button>
+            <div className="workstation-container pb-5">
+                <div className="container-fluid ps-lg-4 pe-lg-5">
+                    <HtmlHead title={title} description={description} />
+                    <div className="mx-auto mt-5" style={{ maxWidth: 500 }}>
+                        <Alert variant="warning">
+                            <div className="d-flex align-items-center gap-2 mb-2 fw-bold">
+                                <CsLineIcons icon="alert-circle" />
+                                Cannot Edit Booking
+                            </div>
+                            This booking cannot be edited because its status is "{booking.booking.booking_status}".
+                            <div className="mt-3">
+                                <Button variant="outline-secondary" onClick={() => history.push('/operations/bookings')} className="btn-capsule btn-capsule-sm">
+                                    Back to Bookings
+                                </Button>
+                            </div>
+                        </Alert>
                     </div>
-                </Alert>
-            </>
+                </div>
+            </div>
         );
     }
 
     return (
-        <>
-            <HtmlHead title={title} description={description} />
-            <Row>
-                <Col>
-                    <div className="page-title-container mb-4">
-                        <Row className="align-items-center">
-                            <Col xs="12" md="7">
-                                <h1 className="mb-0 pb-0 display-4">{title}</h1>
-                                <BreadcrumbList items={breadcrumbs} />
-                            </Col>
-                            <Col xs="12" md="5" className="text-end">
-                                <Button variant="outline-secondary" onClick={handleCancel}>
-                                    <CsLineIcons icon="arrow-left" className="me-2" />
-                                    Cancel
-                                </Button>
-                            </Col>
-                        </Row>
-                    </div>
+        <div className="workstation-container pb-5">
+            <div className="container-fluid ps-lg-4 pe-lg-5">
+                <HtmlHead title={title} description={description} />
+                <Row>
+                    <Col>
+                        <div className="page-title-container mb-4 mt-2 mt-lg-0">
+                            <Row className="align-items-center">
+                                <Col xs="12" md="7">
+                                    <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>{title}</h1>
+                                    <BreadcrumbList items={breadcrumbs} />
+                                </Col>
+                                <Col xs="12" md="5" className="d-flex justify-content-md-end mt-2 mt-md-0">
+                                    <Button variant="outline-secondary" onClick={handleCancel} className="btn-capsule btn-capsule-sm d-inline-flex align-items-center gap-2">
+                                        <CsLineIcons icon="arrow-left" size="14" />
+                                        Cancel
+                                    </Button>
+                                </Col>
+                            </Row>
+                        </div>
 
                     <Row>
                         <Col xl={8} lg={10} className="mx-auto">
@@ -384,35 +396,32 @@ const EditBooking = () => {
                                 </Card>
 
                                 {/* Action Buttons */}
-                                <Card>
-                                    <Card.Body>
-                                        <div className="d-flex gap-2 justify-content-end">
-                                            <Button variant="outline-secondary" onClick={handleCancel}>
-                                                <CsLineIcons icon="x" className="me-2" />
-                                                Cancel
-                                            </Button>
-                                            <Button variant="primary" type="submit" disabled={submitting}>
-                                                {submitting ? (
-                                                    <>
-                                                        <Spinner as="span" animation="border" size="sm" className="me-2" />
-                                                        Saving...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <CsLineIcons icon="save" className="me-2" />
-                                                        Save Changes
-                                                    </>
-                                                )}
-                                            </Button>
-                                        </div>
-                                    </Card.Body>
-                                </Card>
+                                <div className="d-flex gap-2 justify-content-end mt-4">
+                                    <Button variant="outline-secondary" onClick={handleCancel} className="btn-capsule btn-capsule-sm">
+                                        <CsLineIcons icon="x" className="me-2" size="14" />
+                                        Cancel
+                                    </Button>
+                                    <Button variant="primary" type="submit" disabled={submitting} className="btn-capsule btn-capsule-sm px-4">
+                                        {submitting ? (
+                                            <>
+                                                <Spinner as="span" animation="border" size="sm" className="me-2" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <CsLineIcons icon="save" className="me-2" size="14" />
+                                                Save Changes
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
                             </Form>
                         </Col>
                     </Row>
                 </Col>
             </Row>
-        </>
+            </div>
+        </div>
     );
 };
 

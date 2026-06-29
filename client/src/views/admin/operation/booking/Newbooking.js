@@ -6,6 +6,8 @@ import { toast } from 'react-toastify';
 import HtmlHead from 'components/html-head/HtmlHead';
 import BreadcrumbList from 'components/breadcrumb-list/BreadcrumbList';
 import CsLineIcons from 'cs-line-icons/CsLineIcons';
+import RoomDetailModal from 'components/modals/RoomDetailModal';
+import PaymentTracker from './PaymentTracker';
 
 /* ─── Inline styles (no new dependencies) ─────────────────────────────────── */
 const S = {
@@ -71,6 +73,15 @@ const NewBooking = () => {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
 
+  // Room detail modal
+  const [detailRoom, setDetailRoom] = useState(null);
+
+  // Post-creation payment tracker state
+  const [createdBookingId, setCreatedBookingId] = useState(null);
+  const [createdBookingRef, setCreatedBookingRef] = useState('');
+  const [showPaymentTracker, setShowPaymentTracker] = useState(false);
+  const [bookingCreated, setBookingCreated] = useState(false);
+
   const [searchData, setSearchData] = useState({
     check_in_date: '',
     check_out_date: '',
@@ -83,7 +94,6 @@ const NewBooking = () => {
     customer_phone: '',
     special_requests: '',
     booking_source: 'direct',
-    payment_method: '',
     discount_amount: 0,
     coupon_code: '',
   });
@@ -208,8 +218,16 @@ const NewBooking = () => {
   const getCategoryMaxOccupancy = (id) => categories.find(c => c._id === id)?.max_occupancy || 0;
   const isRoomSelected = (id) => !!selectedRooms.find(r => r._id === id);
 
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+  const getImageUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    return `${API_URL.replace('/api', '')}${path}`;
+  };
+
   const STEPS = ['Select Room(s)', 'Guest Details', 'Confirmation'];
   const cur = process.env.REACT_APP_CURRENCY;
+
 
   // Filtered rooms based on search + filters
   const filteredRooms = availableRooms.filter(room => {
@@ -255,9 +273,13 @@ const NewBooking = () => {
       discount_amount: parseFloat(guestData.discount_amount) || 0,
     };
     try {
-      await bookingAPI.create(bookingData);
+      const response = await bookingAPI.create(bookingData);
+      const newBooking = response.data.data?.booking;
       toast.success(`Booking created for ${selectedRooms.length} room(s)!`);
-      history.push('/operations/bookings');
+      setCreatedBookingId(newBooking?._id);
+      setCreatedBookingRef(newBooking?.booking_reference || '');
+      setBookingCreated(true);
+      setLoading(false);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create booking');
       setLoading(false);
@@ -265,722 +287,801 @@ const NewBooking = () => {
   };
 
   return (
-    <>
-      <HtmlHead title={title} description={description} />
-      <Row>
-        <Col>
-          {/* ── Header ── */}
-          <div className="page-title-container mb-4">
-            <Row className="align-items-center">
-              <Col xs="12" md="7">
-                <h1 className="mb-0 pb-0 display-4">{title}</h1>
-                <BreadcrumbList items={breadcrumbs} />
-              </Col>
-              <Col xs="12" md="5" className="text-end mt-2 mt-md-0">
-                <Button variant="outline-secondary" onClick={handleBack} className="d-inline-flex align-items-center gap-2">
-                  <CsLineIcons icon="arrow-left" />
-                  Back
-                </Button>
-              </Col>
-            </Row>
-          </div>
+    <div className="workstation-container pb-5">
+      <div className="container-fluid ps-lg-4 pe-lg-5">
+        <HtmlHead title={title} description={description} />
+        <Row>
+          <Col>
+            {/* ── Header ── */}
+            <div className="page-title-container mb-4 mt-2 mt-lg-0">
+              <Row className="align-items-center">
+                <Col xs="12" md="7">
+                  <h1 className="mb-0 pb-0 display-4 fw-bold" style={{ color: '#23b3f4' }}>{title}</h1>
+                  <BreadcrumbList items={breadcrumbs} />
+                </Col>
+                <Col xs="12" md="5" className="d-flex justify-content-md-end mt-2 mt-md-0">
+                  <Button variant="outline-secondary" onClick={handleBack} className="btn-capsule btn-capsule-sm d-inline-flex align-items-center gap-2">
+                    <CsLineIcons icon="arrow-left" size="14" />
+                    Back
+                  </Button>
+                </Col>
+              </Row>
+            </div>
 
-          {/* ── Step Indicator ── */}
-          <Card className="mb-4">
-            <Card.Body className="py-3 px-4">
-              <div className="d-flex align-items-center">
-                {STEPS.map((label, i) => (
-                  <React.Fragment key={i}>
-                    <div className="d-flex flex-column align-items-center" style={{ minWidth: 72 }}>
-                      <div style={S.stepCircle(step >= i + 1)}>
-                        {step > i + 1
-                          ? <CsLineIcons icon="check" size="14" />
-                          : i + 1}
+            {/* ── Step Indicator ── */}
+            <Card className="mb-4">
+              <Card.Body className="py-3 px-4">
+                <div className="d-flex align-items-center">
+                  {STEPS.map((label, i) => (
+                    <React.Fragment key={i}>
+                      <div className="d-flex flex-column align-items-center" style={{ minWidth: 72 }}>
+                        <div style={S.stepCircle(step >= i + 1)}>
+                          {step > i + 1
+                            ? <CsLineIcons icon="check" size="14" />
+                            : i + 1}
+                        </div>
+                        <span style={{ fontSize: 11, fontWeight: 600, marginTop: 6, color: step >= i + 1 ? 'var(--primary)' : 'var(--muted)', whiteSpace: 'nowrap' }}>
+                          {label}
+                        </span>
                       </div>
-                      <span style={{ fontSize: 11, fontWeight: 600, marginTop: 6, color: step >= i + 1 ? 'var(--primary)' : 'var(--muted)', whiteSpace: 'nowrap' }}>
-                        {label}
-                      </span>
-                    </div>
-                    {i < STEPS.length - 1 && (
-                      <div style={S.stepLine(step >= i + 2)} />
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
-            </Card.Body>
-          </Card>
+                      {i < STEPS.length - 1 && (
+                        <div style={S.stepLine(step >= i + 2)} />
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </Card.Body>
+            </Card>
 
-          {/* ════════════════ STEP 1 ════════════════ */}
-          {step === 1 && (
-            <Card>
-              <Card.Header className="border-bottom pb-3">
-                <h5 className="mb-0 d-flex align-items-center gap-2">
-                  <CsLineIcons icon="search" size="18" />
-                  Search Available Rooms
-                </h5>
-              </Card.Header>
-              <Card.Body>
+            {/* ════════════════ STEP 1 ════════════════ */}
+            {step === 1 && (
+              <Card>
+                <Card.Header className="border-bottom pb-3">
+                  <h5 className="mb-0 d-flex align-items-center gap-2">
+                    <CsLineIcons icon="search" size="18" />
+                    Search Available Rooms
+                  </h5>
+                </Card.Header>
+                <Card.Body>
 
-                {/* Search form */}
-                <Form onSubmit={handleSearchRooms}>
-                  <Row className="g-3 mb-3">
-                    <Col xs={12} sm={6} lg={4}>
-                      <Form.Label style={S.sectionLabel}>Check-In Date</Form.Label>
-                      <Form.Control
-                        type="date"
-                        name="check_in_date"
-                        value={searchData.check_in_date}
-                        onChange={handleSearchChange}
-                        required
-                        min={new Date().toISOString().split('T')[0]}
-                        style={{ borderRadius: 10 }}
-                      />
-                    </Col>
-                    <Col xs={12} sm={6} lg={4}>
-                      <Form.Label style={S.sectionLabel}>Check-Out Date</Form.Label>
-                      <Form.Control
-                        type="date"
-                        name="check_out_date"
-                        value={searchData.check_out_date}
-                        onChange={handleSearchChange}
-                        required
-                        min={searchData.check_in_date || new Date().toISOString().split('T')[0]}
-                        style={{ borderRadius: 10 }}
-                      />
-                    </Col>
-                    <Col xs={12} sm={12} lg={4}>
-                      <Form.Label style={S.sectionLabel}>Total Guests</Form.Label>
-                      <Form.Control
-                        type="number"
-                        name="guests_count"
-                        value={searchData.guests_count}
-                        onChange={handleSearchChange}
-                        required
-                        min="1"
-                        style={{ borderRadius: 10 }}
-                      />
-                      <Form.Text className="text-muted" style={{ fontSize: 11 }}>
-                        Select multiple rooms for large groups
-                      </Form.Text>
-                    </Col>
-                  </Row>
-                  <div className="d-flex justify-content-end">
-                    <Button type="submit" variant="primary" disabled={searching} className="d-inline-flex align-items-center gap-2 px-4" style={{ borderRadius: 10 }}>
-                      {searching
-                        ? <><Spinner as="span" animation="border" size="sm" /> Searching…</>
-                        : <><CsLineIcons icon="search" size="16" /> Search Rooms</>}
-                    </Button>
-                  </div>
-                </Form>
-
-                {/* Selected summary banner */}
-                {selectedRooms.length > 0 && (
-                  <div style={S.summaryBanner} className="mt-4 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
-                    <div className="d-flex align-items-center gap-2">
-                      <CsLineIcons icon="check-circle" className="text-primary" size="18" />
-                      <span className="fw-semibold">{selectedRooms.length} room{selectedRooms.length > 1 ? 's' : ''} selected</span>
-                      <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-                        • {getTotalGuestsDistributed()}/{searchData.guests_count} guests assigned
-                        • Max {getTotalMaxOccupancy()} capacity
-                      </span>
-                    </div>
-                    <div className="d-flex align-items-center gap-3">
-                      <span className="fw-bold text-primary">{cur} {getGrandTotal().toFixed(2)}</span>
-                      <Button variant="primary" size="sm" onClick={handleContinueToGuestDetails} style={{ borderRadius: 8, whiteSpace: 'nowrap' }}>
-                        Continue →
+                  {/* Search form */}
+                  <Form onSubmit={handleSearchRooms}>
+                    <Row className="g-3 mb-3">
+                      <Col xs={12} sm={6} lg={4}>
+                        <Form.Label style={S.sectionLabel}>Check-In Date</Form.Label>
+                        <Form.Control
+                          type="date"
+                          name="check_in_date"
+                          value={searchData.check_in_date}
+                          onChange={handleSearchChange}
+                          required
+                          min={new Date().toISOString().split('T')[0]}
+                          style={{ borderRadius: 10 }}
+                        />
+                      </Col>
+                      <Col xs={12} sm={6} lg={4}>
+                        <Form.Label style={S.sectionLabel}>Check-Out Date</Form.Label>
+                        <Form.Control
+                          type="date"
+                          name="check_out_date"
+                          value={searchData.check_out_date}
+                          onChange={handleSearchChange}
+                          required
+                          min={searchData.check_in_date || new Date().toISOString().split('T')[0]}
+                          style={{ borderRadius: 10 }}
+                        />
+                      </Col>
+                      <Col xs={12} sm={12} lg={4}>
+                        <Form.Label style={S.sectionLabel}>Total Guests</Form.Label>
+                        <Form.Control
+                          type="number"
+                          name="guests_count"
+                          value={searchData.guests_count}
+                          onChange={handleSearchChange}
+                          required
+                          min="1"
+                          style={{ borderRadius: 10 }}
+                        />
+                        <Form.Text className="text-muted" style={{ fontSize: 11 }}>
+                          Select multiple rooms for large groups
+                        </Form.Text>
+                      </Col>
+                    </Row>
+                    <div className="d-flex justify-content-end">
+                      <Button type="submit" variant="primary" disabled={searching} className="btn-capsule btn-capsule-sm px-4 d-inline-flex align-items-center gap-2">
+                        {searching
+                          ? <><Spinner as="span" animation="border" size="sm" /> Searching…</>
+                          : <><CsLineIcons icon="search" size="16" /> Search Rooms</>}
                       </Button>
                     </div>
-                  </div>
-                )}
+                  </Form>
 
-                {/* Available rooms grid */}
-                {availableRooms.length > 0 && (
-                  <div className="mt-4">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h6 className="mb-0 text-muted" style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                        Available Rooms — {availableRooms.length} found
-                      </h6>
-                    </div>
-
-                    {/* ── Filter Bar ── */}
-                    <div style={{ background: 'var(--background)', border: '1px solid var(--separator)', borderRadius: 14, padding: '14px 16px', marginBottom: 20 }}>
-                      <Row className="g-2 align-items-end">
-                        <Col xs={12} sm={5} md={5}>
-                          <div style={S.sectionLabel}>Search Room</div>
-                          <InputGroup size="sm">
-                            <InputGroup.Text style={{ background: 'transparent', border: '1px solid var(--separator)', borderRight: 'none', borderRadius: '8px 0 0 8px' }}>
-                              <CsLineIcons icon="search" size="14" />
-                            </InputGroup.Text>
-                            <Form.Control
-                              type="text"
-                              placeholder="Room number or type…"
-                              value={roomSearch}
-                              onChange={e => setRoomSearch(e.target.value)}
-                              style={{ borderRadius: '0 8px 8px 0', fontSize: 13 }}
-                            />
-                          </InputGroup>
-                        </Col>
-                        <Col xs={6} sm={3} md={3}>
-                          <div style={S.sectionLabel}>Category</div>
-                          <Form.Select
-                            size="sm"
-                            value={filterCategory}
-                            onChange={e => setFilterCategory(e.target.value)}
-                            style={{ borderRadius: 8, fontSize: 13 }}
-                          >
-                            <option value="">All Categories</option>
-                            {categories.map(cat => (
-                              <option key={cat._id} value={cat._id}>{cat.category_name}</option>
-                            ))}
-                          </Form.Select>
-                        </Col>
-                        <Col xs={6} sm={3} md={3}>
-                          <div style={S.sectionLabel}>Floor</div>
-                          <Form.Select
-                            size="sm"
-                            value={filterFloor}
-                            onChange={e => setFilterFloor(e.target.value)}
-                            style={{ borderRadius: 8, fontSize: 13 }}
-                          >
-                            <option value="">All Floors</option>
-                            {availableFloors.map(floor => (
-                              <option key={floor} value={floor}>Floor {floor}</option>
-                            ))}
-                          </Form.Select>
-                        </Col>
-                        <Col xs={12} sm={1} md={1} className="d-flex align-items-end">
-                          {activeFilterCount > 0 && (
-                            <Button
-                              variant="outline-secondary"
-                              size="sm"
-                              style={{ borderRadius: 8, whiteSpace: 'nowrap', fontSize: 12, width: '100%' }}
-                              onClick={() => { setRoomSearch(''); setFilterCategory(''); setFilterFloor(''); }}
-                              title="Clear filters"
-                            >
-                              <CsLineIcons icon="close" size="12" />
-                            </Button>
-                          )}
-                        </Col>
-                      </Row>
-
-                      {/* Active filter chips */}
-                      {activeFilterCount > 0 && (
-                        <div className="d-flex flex-wrap gap-2 mt-2">
-                          {roomSearch && (
-                            <span style={{ fontSize: 11, background: 'rgba(var(--primary-rgb),.1)', color: 'var(--primary)', borderRadius: 20, padding: '2px 10px', fontWeight: 600 }}>
-                              "{roomSearch}"
-                              <span style={{ cursor: 'pointer', marginLeft: 6 }} onClick={() => setRoomSearch('')}>×</span>
-                            </span>
-                          )}
-                          {filterCategory && (
-                            <span style={{ fontSize: 11, background: 'rgba(var(--primary-rgb),.1)', color: 'var(--primary)', borderRadius: 20, padding: '2px 10px', fontWeight: 600 }}>
-                              {getCategoryName(filterCategory)}
-                              <span style={{ cursor: 'pointer', marginLeft: 6 }} onClick={() => setFilterCategory('')}>×</span>
-                            </span>
-                          )}
-                          {filterFloor && (
-                            <span style={{ fontSize: 11, background: 'rgba(var(--primary-rgb),.1)', color: 'var(--primary)', borderRadius: 20, padding: '2px 10px', fontWeight: 600 }}>
-                              Floor {filterFloor}
-                              <span style={{ cursor: 'pointer', marginLeft: 6 }} onClick={() => setFilterFloor('')}>×</span>
-                            </span>
-                          )}
-                          <span style={{ fontSize: 11, color: 'var(--muted)', padding: '2px 0' }}>
-                            {filteredRooms.length} of {availableRooms.length} rooms shown
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* No results state */}
-                    {filteredRooms.length === 0 && (
-                      <div className="text-center py-5" style={{ color: 'var(--muted)' }}>
-                        <CsLineIcons icon="search" size="32" className="mb-3 d-block mx-auto" />
-                        <div className="fw-semibold mb-1">No rooms match your filters</div>
-                        <div style={{ fontSize: 13 }}>Try adjusting or clearing the filters above</div>
-                        <Button variant="outline-secondary" size="sm" className="mt-3" style={{ borderRadius: 8 }}
-                          onClick={() => { setRoomSearch(''); setFilterCategory(''); setFilterFloor(''); }}>
-                          Clear Filters
+                  {/* Selected summary banner */}
+                  {selectedRooms.length > 0 && (
+                    <div style={S.summaryBanner} className="mt-4 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+                      <div className="d-flex align-items-center gap-2">
+                        <CsLineIcons icon="check-circle" className="text-primary" size="18" />
+                        <span className="fw-semibold">{selectedRooms.length} room{selectedRooms.length > 1 ? 's' : ''} selected</span>
+                        <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                          • {getTotalGuestsDistributed()}/{searchData.guests_count} guests assigned
+                          • Max {getTotalMaxOccupancy()} capacity
+                        </span>
+                      </div>
+                      <div className="d-flex align-items-center gap-3">
+                        <span className="fw-bold text-primary">{cur} {getGrandTotal().toFixed(2)}</span>
+                        <Button variant="primary" size="sm" onClick={handleContinueToGuestDetails} style={{ borderRadius: 8, whiteSpace: 'nowrap' }}>
+                          Continue →
                         </Button>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    <Row className="g-3">
-                      {filteredRooms.map((room) => {
-                        const selected = isRoomSelected(room._id);
-                        const maxOccupancy = getCategoryMaxOccupancy(room.category_id);
-                        const category = categories.find(c => c._id === room.category_id);
-                        const isExtraBedAllowed = !!category?.is_extra_bed_allowed;
-                        const extraBedState = extraBed[room._id] || { enabled: false, cost: '' };
-                        return (
-                          <Col key={room._id} xs={12} sm={6} xl={4}>
-                            <div style={S.roomCard(selected)} className="p-3 h-100 d-flex flex-column">
+                  {/* Available rooms grid */}
+                  {availableRooms.length > 0 && (
+                    <div className="mt-4">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h6 className="mb-0 text-muted" style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                          Available Rooms — {availableRooms.length} found
+                        </h6>
+                      </div>
 
-                              {/* Room header */}
-                              <div className="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                  <div className="fw-bold d-flex align-items-center gap-1" style={{ fontSize: 15 }}>
-                                    <CsLineIcons icon="bed" size="14" />
-                                    Room {room.room_number}
-                                  </div>
-                                  <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
-                                    Floor {room.floor} · {getCategoryName(room.category_id)}
-                                  </div>
-                                </div>
-                                <Badge
-                                  bg={selected ? 'primary' : 'success'}
-                                  style={{ fontSize: 10, borderRadius: 6, padding: '4px 8px' }}
-                                >
-                                  {selected ? '✓ Selected' : 'Available'}
-                                </Badge>
-                              </div>
+                      {/* ── Filter Bar ── */}
+                      <div style={{ background: 'var(--background)', border: '1px solid var(--separator)', borderRadius: 14, padding: '14px 16px', marginBottom: 20 }}>
+                        <Row className="g-2 align-items-end">
+                          <Col xs={12} sm={5} md={5}>
+                            <div style={S.sectionLabel}>Search Room</div>
+                            <InputGroup size="sm">
+                              <InputGroup.Text style={{ background: 'transparent', border: '1px solid var(--separator)', borderRight: 'none', borderRadius: '8px 0 0 8px' }}>
+                                <CsLineIcons icon="search" size="14" />
+                              </InputGroup.Text>
+                              <Form.Control
+                                type="text"
+                                placeholder="Room number or type…"
+                                value={roomSearch}
+                                onChange={e => setRoomSearch(e.target.value)}
+                                style={{ borderRadius: '0 8px 8px 0', fontSize: 13 }}
+                              />
+                            </InputGroup>
+                          </Col>
+                          <Col xs={6} sm={3} md={3}>
+                            <div style={S.sectionLabel}>Category</div>
+                            <Form.Select
+                              size="sm"
+                              value={filterCategory}
+                              onChange={e => setFilterCategory(e.target.value)}
+                              style={{ borderRadius: 8, fontSize: 13 }}
+                            >
+                              <option value="">All Categories</option>
+                              {categories.map(cat => (
+                                <option key={cat._id} value={cat._id}>{cat.category_name}</option>
+                              ))}
+                            </Form.Select>
+                          </Col>
+                          <Col xs={6} sm={3} md={3}>
+                            <div style={S.sectionLabel}>Floor</div>
+                            <Form.Select
+                              size="sm"
+                              value={filterFloor}
+                              onChange={e => setFilterFloor(e.target.value)}
+                              style={{ borderRadius: 8, fontSize: 13 }}
+                            >
+                              <option value="">All Floors</option>
+                              {availableFloors.map(floor => (
+                                <option key={floor} value={floor}>Floor {floor}</option>
+                              ))}
+                            </Form.Select>
+                          </Col>
+                          <Col xs={12} sm={1} md={1} className="d-flex align-items-end">
+                            {activeFilterCount > 0 && (
+                              <Button
+                                variant="outline-secondary"
+                                size="sm"
+                                style={{ borderRadius: 8, whiteSpace: 'nowrap', fontSize: 12, width: '100%' }}
+                                onClick={() => { setRoomSearch(''); setFilterCategory(''); setFilterFloor(''); }}
+                                title="Clear filters"
+                              >
+                                <CsLineIcons icon="close" size="12" />
+                              </Button>
+                            )}
+                          </Col>
+                        </Row>
 
-                              {/* Occupancy */}
-                              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>
-                                <CsLineIcons icon="user" size="11" className="me-1" />
-                                Max {maxOccupancy} guest{maxOccupancy > 1 ? 's' : ''}
-                              </div>
+                        {/* Active filter chips */}
+                        {activeFilterCount > 0 && (
+                          <div className="d-flex flex-wrap gap-2 mt-2">
+                            {roomSearch && (
+                              <span style={{ fontSize: 11, background: 'rgba(var(--primary-rgb),.1)', color: 'var(--primary)', borderRadius: 20, padding: '2px 10px', fontWeight: 600 }}>
+                                "{roomSearch}"
+                                <span style={{ cursor: 'pointer', marginLeft: 6 }} onClick={() => setRoomSearch('')}>×</span>
+                              </span>
+                            )}
+                            {filterCategory && (
+                              <span style={{ fontSize: 11, background: 'rgba(var(--primary-rgb),.1)', color: 'var(--primary)', borderRadius: 20, padding: '2px 10px', fontWeight: 600 }}>
+                                {getCategoryName(filterCategory)}
+                                <span style={{ cursor: 'pointer', marginLeft: 6 }} onClick={() => setFilterCategory('')}>×</span>
+                              </span>
+                            )}
+                            {filterFloor && (
+                              <span style={{ fontSize: 11, background: 'rgba(var(--primary-rgb),.1)', color: 'var(--primary)', borderRadius: 20, padding: '2px 10px', fontWeight: 600 }}>
+                                Floor {filterFloor}
+                                <span style={{ cursor: 'pointer', marginLeft: 6 }} onClick={() => setFilterFloor('')}>×</span>
+                              </span>
+                            )}
+                            <span style={{ fontSize: 11, color: 'var(--muted)', padding: '2px 0' }}>
+                              {filteredRooms.length} of {availableRooms.length} rooms shown
+                            </span>
+                          </div>
+                        )}
+                      </div>
 
-                              {/* Guest distribution (when selected) */}
-                              {selected && (
-                                <div className="mb-3">
-                                  <div style={S.sectionLabel}>Guests in this room</div>
-                                  <InputGroup size="sm" style={{ maxWidth: 160 }}>
-                                    <Button
-                                      variant="outline-secondary"
-                                      style={{ borderRadius: '8px 0 0 8px' }}
-                                      onClick={() => handleGuestDistributionChange(room._id, (guestDistribution[room._id] || 1) - 1)}
-                                      disabled={(guestDistribution[room._id] || 0) <= 0}
-                                    >−</Button>
-                                    <Form.Control
-                                      type="number"
-                                      value={guestDistribution[room._id] || 0}
-                                      onChange={(e) => handleGuestDistributionChange(room._id, e.target.value)}
-                                      min="0"
-                                      max={maxOccupancy}
-                                      className="text-center"
-                                      style={{ borderRadius: 0 }}
-                                    />
-                                    <Button
-                                      variant="outline-secondary"
-                                      style={{ borderRadius: '0 8px 8px 0' }}
-                                      onClick={() => handleGuestDistributionChange(room._id, (guestDistribution[room._id] || 0) + 1)}
-                                      disabled={(guestDistribution[room._id] || 0) >= maxOccupancy}
-                                    >+</Button>
-                                  </InputGroup>
-                                  {(guestDistribution[room._id] || 0) > maxOccupancy && (
-                                    <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>
-                                      Exceeds max occupancy ({maxOccupancy})
+                      {/* No results state */}
+                      {filteredRooms.length === 0 && (
+                        <div className="text-center py-5" style={{ color: 'var(--muted)' }}>
+                          <CsLineIcons icon="search" size="32" className="mb-3 d-block mx-auto" />
+                          <div className="fw-semibold mb-1">No rooms match your filters</div>
+                          <div style={{ fontSize: 13 }}>Try adjusting or clearing the filters above</div>
+                          <Button variant="outline-secondary" size="sm" className="mt-3" style={{ borderRadius: 8 }}
+                            onClick={() => { setRoomSearch(''); setFilterCategory(''); setFilterFloor(''); }}>
+                            Clear Filters
+                          </Button>
+                        </div>
+                      )}
+
+                      <Row className="g-3">
+                        {filteredRooms.map((room) => {
+                          const selected = isRoomSelected(room._id);
+                          const maxOccupancy = getCategoryMaxOccupancy(room.category_id);
+                          const category = categories.find(c => c._id === room.category_id);
+                          const isExtraBedAllowed = !!category?.is_extra_bed_allowed;
+                          const extraBedState = extraBed[room._id] || { enabled: false, cost: '' };
+                          return (
+                            <Col key={room._id} xs={12} sm={6} xl={4}>
+                              <div style={S.roomCard(selected)} className="p-3 h-100 d-flex flex-column">
+
+                                {/* Room header */}
+                                <div className="d-flex justify-content-between align-items-start mb-2">
+                                  <div>
+                                    <div className="fw-bold d-flex align-items-center gap-1" style={{ fontSize: 15 }}>
+                                      <CsLineIcons icon="bed" size="14" />
+                                      Room {room.room_number}
                                     </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Extra Bed (only shown when selected & category allows it) */}
-                              {selected && isExtraBedAllowed && (
-                                <div className="mb-3">
-                                  <div
-                                    style={{
-                                      borderRadius: 10,
-                                      border: extraBedState.enabled
-                                        ? '1.5px solid rgba(var(--primary-rgb),.35)'
-                                        : '1.5px solid var(--separator)',
-                                      background: extraBedState.enabled
-                                        ? 'rgba(var(--primary-rgb),.04)'
-                                        : 'transparent',
-                                      padding: '10px 12px',
-                                      transition: 'all .2s',
-                                    }}
-                                  >
-                                    <Form.Check
-                                      type="checkbox"
-                                      id={`extra-bed-${room._id}`}
-                                      checked={extraBedState.enabled}
-                                      onChange={e => handleExtraBedToggle(room._id, e.target.checked)}
-                                      label={
-                                        <span style={{ fontSize: 13, fontWeight: 600 }}>
-                                          Add Extra Bed
-                                          <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--muted)', marginLeft: 6 }}>
-                                            (allowed for this room type)
-                                          </span>
-                                        </span>
-                                      }
-                                    />
-                                    {extraBedState.enabled && (
-                                      <div className="mt-2">
-                                        <div style={S.sectionLabel}>Extra Bed Cost per night ({cur})</div>
-                                        <InputGroup size="sm" style={{ maxWidth: 180 }}>
-                                          <InputGroup.Text style={{ borderRadius: '8px 0 0 8px', fontSize: 12 }}>
-                                            {cur}
-                                          </InputGroup.Text>
-                                          <Form.Control
-                                            type="number"
-                                            min="0"
-                                            step="0.01"
-                                            placeholder="0.00"
-                                            value={extraBedState.cost}
-                                            onChange={e => handleExtraBedCostChange(room._id, e.target.value)}
-                                            style={{ borderRadius: '0 8px 8px 0' }}
-                                          />
-                                        </InputGroup>
-                                        {extraBedState.cost > 0 && room.nights && (
-                                          <div style={{ fontSize: 11, color: 'var(--primary)', marginTop: 4, fontWeight: 600 }}>
-                                            +{cur} {(parseFloat(extraBedState.cost) * room.nights).toFixed(2)} total for {room.nights} night{room.nights > 1 ? 's' : ''}
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
+                                    <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+                                      Floor {room.floor} · {getCategoryName(room.category_id)}
+                                    </div>
+                                  </div>
+                                  <div className="d-flex align-items-center gap-1">
+                                    <Badge
+                                      bg={selected ? 'primary' : 'success'}
+                                      style={{ fontSize: 10, borderRadius: 6, padding: '4px 8px' }}
+                                    >
+                                      {selected ? '✓ Selected' : 'Available'}
+                                    </Badge>
+                                    <button
+                                      type="button"
+                                      title="View room details"
+                                      onClick={e => { e.stopPropagation(); setDetailRoom({ ...room, category_name: getCategoryName(room.category_id), max_occupancy: maxOccupancy, is_extra_bed_allowed: isExtraBedAllowed }); }}
+                                      style={{ background: 'none', border: '1px solid var(--separator)', borderRadius: 6, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--muted)', flexShrink: 0, padding: 0 }}
+                                    >
+                                      <CsLineIcons icon="eye" size="12" />
+                                    </button>
                                   </div>
                                 </div>
-                              )}
 
-                              {/* Pricing */}
-                              <div className="mt-auto pt-2 border-top d-flex justify-content-between align-items-end">
-                                <div>
-                                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>Per night</div>
-                                  <div style={{ fontSize: 15, fontWeight: 700 }}>{cur} {room.current_price}</div>
+                                {/* Occupancy */}
+                                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>
+                                  <CsLineIcons icon="user" size="11" className="me-1" />
+                                  Max {maxOccupancy} guest{maxOccupancy > 1 ? 's' : ''}
                                 </div>
-                                {room.nights && (
-                                  <div className="text-end">
-                                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>{room.nights} night{room.nights > 1 ? 's' : ''}</div>
-                                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--primary)' }}>{cur} {room.estimatedTotal}</div>
-                                    {extraBedState.enabled && extraBedState.cost > 0 && (
-                                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                                        +{cur} {(parseFloat(extraBedState.cost) * room.nights).toFixed(2)} extra bed
+
+                                {/* Guest distribution (when selected) */}
+                                {selected && (
+                                  <div className="mb-3">
+                                    <div style={S.sectionLabel}>Guests in this room</div>
+                                    <InputGroup size="sm" style={{ maxWidth: 160 }}>
+                                      <Button
+                                        variant="outline-secondary"
+                                        style={{ borderRadius: '8px 0 0 8px' }}
+                                        onClick={() => handleGuestDistributionChange(room._id, (guestDistribution[room._id] || 1) - 1)}
+                                        disabled={(guestDistribution[room._id] || 0) <= 0}
+                                      >−</Button>
+                                      <Form.Control
+                                        type="number"
+                                        value={guestDistribution[room._id] || 0}
+                                        onChange={(e) => handleGuestDistributionChange(room._id, e.target.value)}
+                                        min="0"
+                                        max={maxOccupancy}
+                                        className="text-center"
+                                        style={{ borderRadius: 0 }}
+                                      />
+                                      <Button
+                                        variant="outline-secondary"
+                                        style={{ borderRadius: '0 8px 8px 0' }}
+                                        onClick={() => handleGuestDistributionChange(room._id, (guestDistribution[room._id] || 0) + 1)}
+                                        disabled={(guestDistribution[room._id] || 0) >= maxOccupancy}
+                                      >+</Button>
+                                    </InputGroup>
+                                    {(guestDistribution[room._id] || 0) > maxOccupancy && (
+                                      <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>
+                                        Exceeds max occupancy ({maxOccupancy})
                                       </div>
                                     )}
                                   </div>
                                 )}
-                              </div>
 
-                              {/* CTA */}
-                              <Button
-                                variant={selected ? 'danger' : 'primary'}
-                                className="w-100 mt-3 d-inline-flex align-items-center justify-content-center gap-2"
-                                style={{ borderRadius: 10, fontWeight: 600 }}
-                                onClick={() => handleSelectRoom(room)}
-                              >
-                                <CsLineIcons icon={selected ? 'close' : 'check'} size="14" />
-                                {selected ? 'Remove' : 'Select Room'}
-                              </Button>
-                            </div>
-                          </Col>
-                        );
-                      })}
-                    </Row>
+                                {/* Extra Bed (only shown when selected & category allows it) */}
+                                {selected && isExtraBedAllowed && (
+                                  <div className="mb-3">
+                                    <div
+                                      style={{
+                                        borderRadius: 10,
+                                        border: extraBedState.enabled
+                                          ? '1.5px solid rgba(var(--primary-rgb),.35)'
+                                          : '1.5px solid var(--separator)',
+                                        background: extraBedState.enabled
+                                          ? 'rgba(var(--primary-rgb),.04)'
+                                          : 'transparent',
+                                        padding: '10px 12px',
+                                        transition: 'all .2s',
+                                      }}
+                                    >
+                                      <Form.Check
+                                        type="checkbox"
+                                        id={`extra-bed-${room._id}`}
+                                        checked={extraBedState.enabled}
+                                        onChange={e => handleExtraBedToggle(room._id, e.target.checked)}
+                                        label={
+                                          <span style={{ fontSize: 13, fontWeight: 600 }}>
+                                            Add Extra Bed
+                                            <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--muted)', marginLeft: 6 }}>
+                                              (allowed for this room type)
+                                            </span>
+                                          </span>
+                                        }
+                                      />
+                                      {extraBedState.enabled && (
+                                        <div className="mt-2">
+                                          <div style={S.sectionLabel}>Extra Bed Cost per night ({cur})</div>
+                                          <InputGroup size="sm" style={{ maxWidth: 180 }}>
+                                            <InputGroup.Text style={{ borderRadius: '8px 0 0 8px', fontSize: 12 }}>
+                                              {cur}
+                                            </InputGroup.Text>
+                                            <Form.Control
+                                              type="number"
+                                              min="0"
+                                              step="0.01"
+                                              placeholder="0.00"
+                                              value={extraBedState.cost}
+                                              onChange={e => handleExtraBedCostChange(room._id, e.target.value)}
+                                              style={{ borderRadius: '0 8px 8px 0' }}
+                                            />
+                                          </InputGroup>
+                                          {extraBedState.cost > 0 && room.nights && (
+                                            <div style={{ fontSize: 11, color: 'var(--primary)', marginTop: 4, fontWeight: 600 }}>
+                                              +{cur} {(parseFloat(extraBedState.cost) * room.nights).toFixed(2)} total for {room.nights} night{room.nights > 1 ? 's' : ''}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
 
-                    {/* Continue button */}
-                    {selectedRooms.length > 0 && (
-                      <div className="d-flex justify-content-end mt-4">
-                        <Button variant="primary" size="lg" onClick={handleContinueToGuestDetails} style={{ borderRadius: 12, fontWeight: 700 }}>
-                          Continue with {selectedRooms.length} Room{selectedRooms.length > 1 ? 's' : ''} →
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </Card.Body>
-            </Card>
-          )}
-
-          {/* ════════════════ STEP 2 ════════════════ */}
-          {step === 2 && selectedRooms.length > 0 && (
-            <Row className="g-4">
-              {/* Left: selected rooms summary */}
-              <Col xs={12} lg={4} className="order-lg-2">
-                <Card style={{ borderRadius: 16, position: 'sticky', top: 80 }}>
-                  <Card.Header className="bg-primary text-white" style={{ borderRadius: '16px 16px 0 0' }}>
-                    <h6 className="mb-0 d-flex align-items-center gap-2">
-                      <CsLineIcons icon="bed" size="16" />
-                      {selectedRooms.length} Room{selectedRooms.length > 1 ? 's' : ''} Selected
-                    </h6>
-                  </Card.Header>
-                  <Card.Body className="p-0">
-                    {selectedRooms.map((room, i) => {
-                      const eb = extraBed[room._id] || {};
-                      const ebTotal = getExtraBedTotal(room._id);
-                      return (
-                        <div key={room._id} style={{ padding: '12px 16px', borderBottom: i < selectedRooms.length - 1 ? '1px solid var(--separator)' : 'none' }}>
-                          <div className="d-flex justify-content-between align-items-start">
-                            <div>
-                              <div className="fw-semibold">Room {room.room_number}</div>
-                              <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                                {getCategoryName(room.category_id)} · {guestDistribution[room._id] || 0} guest{(guestDistribution[room._id] || 0) !== 1 ? 's' : ''}
-                              </div>
-                              {eb.enabled && ebTotal > 0 && (
-                                <div style={{ fontSize: 11, color: 'var(--primary)', marginTop: 2 }}>
-                                  + Extra bed: {cur} {ebTotal.toFixed(2)}
+                                {/* Pricing */}
+                                <div className="mt-auto pt-2 border-top d-flex justify-content-between align-items-end">
+                                  <div>
+                                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>Per night</div>
+                                    <div style={{ fontSize: 15, fontWeight: 700 }}>{cur} {room.current_price}</div>
+                                  </div>
+                                  {room.nights && (
+                                    <div className="text-end">
+                                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>{room.nights} night{room.nights > 1 ? 's' : ''}</div>
+                                      <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--primary)' }}>{cur} {room.estimatedTotal}</div>
+                                      {extraBedState.enabled && extraBedState.cost > 0 && (
+                                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                                          +{cur} {(parseFloat(extraBedState.cost) * room.nights).toFixed(2)} extra bed
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                            <div className="text-end">
-                              <div className="fw-bold" style={{ fontSize: 15 }}>{cur} {room.estimatedTotal}</div>
-                              {eb.enabled && ebTotal > 0 && (
-                                <div style={{ fontSize: 11, color: 'var(--primary)' }}>+{cur} {ebTotal.toFixed(2)}</div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <div style={{ padding: '12px 16px', background: 'rgba(var(--primary-rgb),.05)', borderTop: '2px solid var(--primary)' }}>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                          <div className="fw-bold">Total</div>
-                          <div style={{ fontSize: 11, color: 'var(--muted)' }}>
-                            {getTotalGuestsDistributed()} guests · {selectedRooms[0]?.nights} nights
-                          </div>
-                        </div>
-                        <div className="fw-bold text-primary" style={{ fontSize: 18 }}>{cur} {getGrandTotal().toFixed(2)}</div>
-                      </div>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
 
-              {/* Right: guest form */}
-              <Col xs={12} lg={8} className="order-lg-1">
-                <Card style={{ borderRadius: 16 }}>
-                  <Card.Header className="border-bottom pb-3">
-                    <h5 className="mb-0 d-flex align-items-center gap-2">
-                      <CsLineIcons icon="user" size="18" />
-                      Guest Information
-                    </h5>
-                  </Card.Header>
-                  <Card.Body>
-                    <Form onSubmit={(e) => { e.preventDefault(); setStep(3); }}>
-                      <Row className="g-3">
-                        <Col xs={12}>
-                          <Form.Label style={S.sectionLabel}>Full Name</Form.Label>
-                          <Form.Control type="text" name="customer_name" value={guestData.customer_name} onChange={handleGuestChange} required placeholder="John Doe" style={{ borderRadius: 10 }} />
-                        </Col>
-                        <Col xs={12} sm={6}>
-                          <Form.Label style={S.sectionLabel}>Email Address</Form.Label>
-                          <Form.Control type="email" name="customer_email" value={guestData.customer_email} onChange={handleGuestChange} required placeholder="john@example.com" style={{ borderRadius: 10 }} />
-                        </Col>
-                        <Col xs={12} sm={6}>
-                          <Form.Label style={S.sectionLabel}>Phone Number</Form.Label>
-                          <Form.Control type="tel" name="customer_phone" value={guestData.customer_phone} onChange={handleGuestChange} required placeholder="+1234567890" style={{ borderRadius: 10 }} />
-                        </Col>
-                        <Col xs={12} sm={6}>
-                          <Form.Label style={S.sectionLabel}>Booking Source</Form.Label>
-                          <Form.Select name="booking_source" value={guestData.booking_source} onChange={handleGuestChange} style={{ borderRadius: 10 }}>
-                            <option value="direct">Direct</option>
-                            <option value="booking.com">Booking.com</option>
-                            <option value="makemytrip">MakeMyTrip</option>
-                            <option value="walk_in">Walk-in</option>
-                          </Form.Select>
-                        </Col>
-                        <Col xs={12} sm={6}>
-                          <Form.Label style={S.sectionLabel}>Payment Method</Form.Label>
-                          <Form.Select name="payment_method" value={guestData.payment_method} onChange={handleGuestChange} style={{ borderRadius: 10 }}>
-                            <option value="">Not paid yet</option>
-                            <option value="cash">Cash</option>
-                            <option value="card">Card</option>
-                            <option value="upi">UPI</option>
-                            <option value="online">Online</option>
-                          </Form.Select>
-                        </Col>
-                        <Col xs={12} sm={6}>
-                          <Form.Label style={S.sectionLabel}>Discount ({cur})</Form.Label>
-                          <Form.Control type="number" name="discount_amount" value={guestData.discount_amount} onChange={handleGuestChange} min="0" step="0.01" style={{ borderRadius: 10 }} />
-                        </Col>
-                        <Col xs={12} sm={6}>
-                          <Form.Label style={S.sectionLabel}>Coupon Code</Form.Label>
-                          <Form.Control type="text" name="coupon_code" value={guestData.coupon_code} onChange={handleGuestChange} placeholder="SUMMER2026" style={{ borderRadius: 10 }} />
-                        </Col>
-                        <Col xs={12}>
-                          <Form.Label style={S.sectionLabel}>Special Requests</Form.Label>
-                          <Form.Control as="textarea" rows={3} name="special_requests" value={guestData.special_requests} onChange={handleGuestChange} placeholder="Any special requirements…" style={{ borderRadius: 10 }} />
-                        </Col>
+                                {/* CTA */}
+                                <Button
+                                  variant={selected ? 'danger' : 'primary'}
+                                  className="btn-capsule btn-capsule-sm w-100 mt-3 d-inline-flex align-items-center justify-content-center gap-2"
+                                  onClick={() => handleSelectRoom(room)}
+                                >
+                                  <CsLineIcons icon={selected ? 'close' : 'check'} size="14" />
+                                  {selected ? 'Remove' : 'Select Room'}
+                                </Button>
+                              </div>
+                            </Col>
+                          );
+                        })}
                       </Row>
 
-                      <div className="d-flex justify-content-between mt-4 gap-2">
-                        <Button variant="outline-secondary" onClick={handleBack} style={{ borderRadius: 10 }}>
-                          ← Back
-                        </Button>
-                        <Button type="submit" variant="primary" style={{ borderRadius: 10, fontWeight: 600 }}>
-                          Continue to Confirmation →
-                        </Button>
-                      </div>
-                    </Form>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
-          )}
+                      {/* Continue button */}
+                      {selectedRooms.length > 0 && (
+                        <div className="d-flex justify-content-end mt-4">
+                          <Button variant="primary" className="btn-capsule px-4 py-2" onClick={handleContinueToGuestDetails}>
+                            Continue with {selectedRooms.length} Room{selectedRooms.length > 1 ? 's' : ''} →
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            )}
 
-          {/* ════════════════ STEP 3 ════════════════ */}
-          {step === 3 && selectedRooms.length > 0 && (
-            <Row className="g-4">
-
-              {/* Billing summary (right on desktop, bottom on mobile) */}
-              <Col xs={12} lg={4} className="order-lg-2">
-                <Card style={{ borderRadius: 16, position: 'sticky', top: 80 }}>
-                  <Card.Header style={{ borderRadius: '16px 16px 0 0' }}>
-                    <h6 className="mb-0">Billing Summary</h6>
-                  </Card.Header>
-                  <Card.Body className="p-0">
-                    {selectedRooms.map((room, i) => {
-                      const eb = extraBed[room._id] || {};
-                      const ebTotal = getExtraBedTotal(room._id);
-                      return (
-                        <div key={room._id} style={S.confirmRow(false)}>
-                          <div className="d-flex justify-content-between align-items-start">
-                            <div style={{ fontSize: 13 }}>
-                              <div className="fw-semibold">Room {room.room_number}</div>
-                              <div style={{ fontSize: 11, color: 'var(--muted)' }}>{room.nights} nights × {cur} {room.current_price}</div>
-                              {eb.enabled && ebTotal > 0 && (
-                                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                                  Extra bed: {room.nights} nights × {cur} {parseFloat(eb.cost).toFixed(2)}
+            {/* ════════════════ STEP 2 ════════════════ */}
+            {step === 2 && selectedRooms.length > 0 && (
+              <Row className="g-4">
+                {/* Left: selected rooms summary */}
+                <Col xs={12} lg={4} className="order-lg-2">
+                  <Card style={{ borderRadius: 16, position: 'sticky', top: 80 }}>
+                    <Card.Header className="bg-primary text-white" style={{ borderRadius: '16px 16px 0 0' }}>
+                      <h6 className="mb-0 d-flex align-items-center gap-2">
+                        <CsLineIcons icon="bed" size="16" />
+                        {selectedRooms.length} Room{selectedRooms.length > 1 ? 's' : ''} Selected
+                      </h6>
+                    </Card.Header>
+                    <Card.Body className="p-0">
+                      {selectedRooms.map((room, i) => {
+                        const eb = extraBed[room._id] || {};
+                        const ebTotal = getExtraBedTotal(room._id);
+                        return (
+                          <div key={room._id} style={{ padding: '12px 16px', borderBottom: i < selectedRooms.length - 1 ? '1px solid var(--separator)' : 'none' }}>
+                            <div className="d-flex justify-content-between align-items-start">
+                              <div>
+                                <div className="fw-semibold">Room {room.room_number}</div>
+                                <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                                  {getCategoryName(room.category_id)} · {guestDistribution[room._id] || 0} guest{(guestDistribution[room._id] || 0) !== 1 ? 's' : ''}
                                 </div>
-                              )}
-                            </div>
-                            <div className="text-end">
-                              <div className="fw-bold">{cur} {room.estimatedTotal}</div>
-                              {eb.enabled && ebTotal > 0 && (
-                                <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600 }}>+{cur} {ebTotal.toFixed(2)}</div>
-                              )}
+                                {eb.enabled && ebTotal > 0 && (
+                                  <div style={{ fontSize: 11, color: 'var(--primary)', marginTop: 2 }}>
+                                    + Extra bed: {cur} {ebTotal.toFixed(2)}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-end">
+                                <div className="fw-bold" style={{ fontSize: 15 }}>{cur} {room.estimatedTotal}</div>
+                                {eb.enabled && ebTotal > 0 && (
+                                  <div style={{ fontSize: 11, color: 'var(--primary)' }}>+{cur} {ebTotal.toFixed(2)}</div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                    {getTotalExtraBedCost() > 0 && (
-                      <div style={S.confirmRow(false)}>
-                        <div className="d-flex justify-content-between">
-                          <span style={{ fontSize: 13, color: 'var(--muted)' }}>Extra Bed Subtotal</span>
-                          <span className="fw-bold text-primary">+{cur} {getTotalExtraBedCost().toFixed(2)}</span>
-                        </div>
-                      </div>
-                    )}
-                    {parseFloat(guestData.discount_amount) > 0 && (
-                      <div style={S.confirmRow(false)}>
-                        <div className="d-flex justify-content-between">
-                          <span style={{ fontSize: 13, color: 'var(--muted)' }}>Discount</span>
-                          <span className="text-danger fw-bold">−{cur} {guestData.discount_amount}</span>
+                        );
+                      })}
+                      <div style={{ padding: '12px 16px', background: 'rgba(var(--primary-rgb),.05)', borderTop: '2px solid var(--primary)' }}>
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div>
+                            <div className="fw-bold">Total</div>
+                            <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                              {getTotalGuestsDistributed()} guests · {selectedRooms[0]?.nights} nights
+                            </div>
+                          </div>
+                          <div className="fw-bold text-primary" style={{ fontSize: 18 }}>{cur} {getGrandTotal().toFixed(2)}</div>
                         </div>
                       </div>
-                    )}
-                    <div style={{ padding: '14px 16px', background: 'rgba(var(--primary-rgb),.05)', borderTop: '2px solid var(--primary)' }}>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                          <div className="fw-bold">Total</div>
-                          <div style={{ fontSize: 11, color: 'var(--muted)' }}>
-                            {selectedRooms.length} room{selectedRooms.length > 1 ? 's' : ''} · {searchData.guests_count} guest{searchData.guests_count > 1 ? 's' : ''}
+                    </Card.Body>
+                  </Card>
+                </Col>
+
+                {/* Right: guest form */}
+                <Col xs={12} lg={8} className="order-lg-1">
+                  <Card style={{ borderRadius: 16 }}>
+                    <Card.Header className="border-bottom pb-3">
+                      <h5 className="mb-0 d-flex align-items-center gap-2">
+                        <CsLineIcons icon="user" size="18" />
+                        Guest Information
+                      </h5>
+                    </Card.Header>
+                    <Card.Body>
+                      <Form onSubmit={(e) => { e.preventDefault(); setStep(3); }}>
+                        <Row className="g-3">
+                          <Col xs={12}>
+                            <Form.Label style={S.sectionLabel}>Full Name</Form.Label>
+                            <Form.Control type="text" name="customer_name" value={guestData.customer_name} onChange={handleGuestChange} required placeholder="John Doe" style={{ borderRadius: 10 }} />
+                          </Col>
+                          <Col xs={12} sm={6}>
+                            <Form.Label style={S.sectionLabel}>Email Address</Form.Label>
+                            <Form.Control type="email" name="customer_email" value={guestData.customer_email} onChange={handleGuestChange} required placeholder="john@example.com" style={{ borderRadius: 10 }} />
+                          </Col>
+                          <Col xs={12} sm={6}>
+                            <Form.Label style={S.sectionLabel}>Phone Number</Form.Label>
+                            <Form.Control type="tel" name="customer_phone" value={guestData.customer_phone} onChange={handleGuestChange} required placeholder="+1234567890" style={{ borderRadius: 10 }} />
+                          </Col>
+                          <Col xs={12} sm={6}>
+                            <Form.Label style={S.sectionLabel}>Booking Source</Form.Label>
+                            <Form.Select name="booking_source" value={guestData.booking_source} onChange={handleGuestChange} style={{ borderRadius: 10 }}>
+                              <option value="direct">Direct</option>
+                              <option value="booking.com">Booking.com</option>
+                              <option value="makemytrip">MakeMyTrip</option>
+                              <option value="walk_in">Walk-in</option>
+                            </Form.Select>
+                          </Col>
+
+                          <Col xs={12} sm={6}>
+                            <Form.Label style={S.sectionLabel}>Discount ({cur})</Form.Label>
+                            <Form.Control type="number" name="discount_amount" value={guestData.discount_amount} onChange={handleGuestChange} min="0" step="0.01" style={{ borderRadius: 10 }} />
+                          </Col>
+                          <Col xs={12} sm={6}>
+                            <Form.Label style={S.sectionLabel}>Coupon Code</Form.Label>
+                            <Form.Control type="text" name="coupon_code" value={guestData.coupon_code} onChange={handleGuestChange} placeholder="SUMMER2026" style={{ borderRadius: 10 }} />
+                          </Col>
+                          <Col xs={12}>
+                            <Form.Label style={S.sectionLabel}>Special Requests</Form.Label>
+                            <Form.Control as="textarea" rows={3} name="special_requests" value={guestData.special_requests} onChange={handleGuestChange} placeholder="Any special requirements…" style={{ borderRadius: 10 }} />
+                          </Col>
+                          <Col xs={12}>
+                            <div style={{ borderRadius: 12, border: '1.5px solid rgba(var(--primary-rgb),.2)', background: 'rgba(var(--primary-rgb),.04)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(var(--primary-rgb),.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <CsLineIcons icon="credit-card" size="18" className="text-primary" />
+                              </div>
+                              <div>
+                                <div style={{ fontWeight: 700, fontSize: 13 }}>Payment recorded after booking</div>
+                                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+                                  Once the booking is confirmed, you'll be able to record full or partial payments with method, transaction ID, and receipt — all tracked in one place.
+                                </div>
+                              </div>
+                            </div>
+                          </Col>
+                        </Row>
+
+                        <div className="d-flex justify-content-between mt-4 gap-2">
+                          <Button variant="outline-secondary" className="btn-capsule btn-capsule-sm" onClick={handleBack}>
+                            ← Back
+                          </Button>
+                          <Button type="submit" variant="primary" className="btn-capsule btn-capsule-sm px-4">
+                            Continue to Confirmation →
+                          </Button>
+                        </div>
+                      </Form>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+            )}
+
+            {/* ════════════════ STEP 3 ════════════════ */}
+            {step === 3 && selectedRooms.length > 0 && (
+              <Row className="g-4">
+
+                {/* Billing summary (right on desktop, bottom on mobile) */}
+                <Col xs={12} lg={4} className="order-lg-2">
+                  <Card style={{ borderRadius: 16, position: 'sticky', top: 80 }}>
+                    <Card.Header style={{ borderRadius: '16px 16px 0 0' }}>
+                      <h6 className="mb-0">Billing Summary</h6>
+                    </Card.Header>
+                    <Card.Body className="p-0">
+                      {selectedRooms.map((room, i) => {
+                        const eb = extraBed[room._id] || {};
+                        const ebTotal = getExtraBedTotal(room._id);
+                        return (
+                          <div key={room._id} style={S.confirmRow(false)}>
+                            <div className="d-flex justify-content-between align-items-start">
+                              <div style={{ fontSize: 13 }}>
+                                <div className="fw-semibold">Room {room.room_number}</div>
+                                <div style={{ fontSize: 11, color: 'var(--muted)' }}>{room.nights} nights × {cur} {room.current_price}</div>
+                                {eb.enabled && ebTotal > 0 && (
+                                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                                    Extra bed: {room.nights} nights × {cur} {parseFloat(eb.cost).toFixed(2)}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-end">
+                                <div className="fw-bold">{cur} {room.estimatedTotal}</div>
+                                {eb.enabled && ebTotal > 0 && (
+                                  <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600 }}>+{cur} {ebTotal.toFixed(2)}</div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {getTotalExtraBedCost() > 0 && (
+                        <div style={S.confirmRow(false)}>
+                          <div className="d-flex justify-content-between">
+                            <span style={{ fontSize: 13, color: 'var(--muted)' }}>Extra Bed Subtotal</span>
+                            <span className="fw-bold text-primary">+{cur} {getTotalExtraBedCost().toFixed(2)}</span>
                           </div>
                         </div>
-                        <div className="fw-bold text-primary" style={{ fontSize: 20 }}>
-                          {cur} {(getGrandTotal() - parseFloat(guestData.discount_amount || 0)).toFixed(2)}
+                      )}
+                      {parseFloat(guestData.discount_amount) > 0 && (
+                        <div style={S.confirmRow(false)}>
+                          <div className="d-flex justify-content-between">
+                            <span style={{ fontSize: 13, color: 'var(--muted)' }}>Discount</span>
+                            <span className="text-danger fw-bold">−{cur} {guestData.discount_amount}</span>
+                          </div>
                         </div>
+                      )}
+                      <div style={{ padding: '14px 16px', background: 'rgba(var(--primary-rgb),.05)', borderTop: '2px solid var(--primary)' }}>
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div>
+                            <div className="fw-bold">Total</div>
+                            <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                              {selectedRooms.length} room{selectedRooms.length > 1 ? 's' : ''} · {searchData.guests_count} guest{searchData.guests_count > 1 ? 's' : ''}
+                            </div>
+                          </div>
+                          <div className="fw-bold text-primary" style={{ fontSize: 20 }}>
+                            {cur} {(getGrandTotal() - parseFloat(guestData.discount_amount || 0)).toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+
+                {/* Confirmation details */}
+                <Col xs={12} lg={8} className="order-lg-1">
+                  <Row className="g-3">
+                    {/* Rooms */}
+                    <Col xs={12}>
+                      <Card style={{ borderRadius: 16 }}>
+                        <Card.Header>
+                          <h6 className="mb-0 d-flex align-items-center gap-2">
+                            <CsLineIcons icon="bed" size="16" />
+                            Room Details
+                          </h6>
+                        </Card.Header>
+                        <Card.Body className="p-0">
+                          {selectedRooms.map((room, i) => (
+                            <div key={room._id} style={{ padding: '12px 16px', borderBottom: i < selectedRooms.length - 1 ? '1px solid var(--separator)' : 'none' }}>
+                              <Row className="align-items-center g-2">
+                                <Col xs={5}>
+                                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>Room {i + 1}</div>
+                                  <div className="fw-semibold">Room {room.room_number}</div>
+                                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>{getCategoryName(room.category_id)} · Floor {room.floor}</div>
+                                </Col>
+                                <Col xs={3}>
+                                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>Guests</div>
+                                  <div className="fw-semibold">{guestDistribution[room._id] || 0}</div>
+                                </Col>
+                                <Col xs={4} className="text-end">
+                                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>Amount</div>
+                                  <div className="fw-bold">{cur} {room.estimatedTotal}</div>
+                                </Col>
+                              </Row>
+                            </div>
+                          ))}
+                        </Card.Body>
+                      </Card>
+                    </Col>
+
+                    {/* Dates + Guest side by side */}
+                    <Col xs={12} sm={6}>
+                      <Card style={{ borderRadius: 16, height: '100%' }}>
+                        <Card.Header>
+                          <h6 className="mb-0 d-flex align-items-center gap-2">
+                            <CsLineIcons icon="calendar" size="16" />
+                            Dates
+                          </h6>
+                        </Card.Header>
+                        <Card.Body>
+                          {[
+                            ['Check-In', new Date(searchData.check_in_date).toLocaleDateString()],
+                            ['Check-Out', new Date(searchData.check_out_date).toLocaleDateString()],
+                            ['Nights', selectedRooms[0]?.nights],
+                            ['Total Guests', searchData.guests_count],
+                          ].map(([label, val]) => (
+                            <div key={label} className="mb-3">
+                              <div style={S.sectionLabel}>{label}</div>
+                              <div className="fw-semibold">{val}</div>
+                            </div>
+                          ))}
+                        </Card.Body>
+                      </Card>
+                    </Col>
+
+                    <Col xs={12} sm={6}>
+                      <Card style={{ borderRadius: 16, height: '100%' }}>
+                        <Card.Header>
+                          <h6 className="mb-0 d-flex align-items-center gap-2">
+                            <CsLineIcons icon="user" size="16" />
+                            Guest
+                          </h6>
+                        </Card.Header>
+                        <Card.Body>
+                          {[
+                            ['Name', guestData.customer_name],
+                            ['Email', guestData.customer_email],
+                            ['Phone', guestData.customer_phone],
+                            ['Source', guestData.booking_source],
+                          ].map(([label, val]) => (
+                            <div key={label} className="mb-3">
+                              <div style={S.sectionLabel}>{label}</div>
+                              <div className="fw-semibold">{val}</div>
+                            </div>
+                          ))}
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  </Row>
+
+                  {/* ── Confirm actions ── */}
+                  {!bookingCreated ? (
+                    <div className="d-flex justify-content-between mt-4 gap-2">
+                      <Button variant="outline-secondary" className="btn-capsule btn-capsule-sm" onClick={handleBack}>
+                        ← Back
+                      </Button>
+                      <Button variant="primary" className="btn-capsule px-4 py-2" onClick={handleConfirmBooking} disabled={loading}>
+                        {loading
+                          ? <><Spinner as="span" animation="border" size="sm" className="me-2" />Creating…</>
+                          : `Confirm Booking (${selectedRooms.length} room${selectedRooms.length > 1 ? 's' : ''})`}
+                      </Button>
+                    </div>
+                  ) : (
+                    /* ── Success screen shown after booking created ── */
+                    <div style={{ borderRadius: 16, border: '2px solid #28a74540', background: 'rgba(40,167,69,.04)', padding: '28px 24px', marginTop: 24, textAlign: 'center' }}>
+                      <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(40,167,69,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#28a745' }}>
+                        <CsLineIcons icon="check-circle" size="28" />
+                      </div>
+                      <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 6 }}>Booking Confirmed!</div>
+                      <div style={{ fontFamily: 'monospace', fontSize: 13, color: 'var(--primary)', fontWeight: 700, marginBottom: 8 }}>
+                        {createdBookingRef}
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>
+                        Would you like to record a payment now, or do it later from the booking details?
+                      </div>
+                      <div className="d-flex justify-content-center gap-3 flex-wrap">
+                        <Button
+                          variant="primary"
+                          onClick={() => setShowPaymentTracker(true)}
+                          className="btn-capsule btn-capsule-sm px-4 d-inline-flex align-items-center gap-2"
+                        >
+                          <CsLineIcons icon="credit-card" size="15" />
+                          Record Payment Now
+                        </Button>
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() => history.push('/operations/bookings')}
+                          className="btn-capsule btn-capsule-sm px-4 d-inline-flex align-items-center gap-2"
+                        >
+                          <CsLineIcons icon="arrow-right" size="15" />
+                          Go to Bookings
+                        </Button>
                       </div>
                     </div>
-                  </Card.Body>
-                </Card>
-              </Col>
+                  )}
+                </Col>
+              </Row>
+            )}
 
-              {/* Confirmation details */}
-              <Col xs={12} lg={8} className="order-lg-1">
-                <Row className="g-3">
-                  {/* Rooms */}
-                  <Col xs={12}>
-                    <Card style={{ borderRadius: 16 }}>
-                      <Card.Header>
-                        <h6 className="mb-0 d-flex align-items-center gap-2">
-                          <CsLineIcons icon="bed" size="16" />
-                          Room Details
-                        </h6>
-                      </Card.Header>
-                      <Card.Body className="p-0">
-                        {selectedRooms.map((room, i) => (
-                          <div key={room._id} style={{ padding: '12px 16px', borderBottom: i < selectedRooms.length - 1 ? '1px solid var(--separator)' : 'none' }}>
-                            <Row className="align-items-center g-2">
-                              <Col xs={5}>
-                                <div style={{ fontSize: 11, color: 'var(--muted)' }}>Room {i + 1}</div>
-                                <div className="fw-semibold">Room {room.room_number}</div>
-                                <div style={{ fontSize: 12, color: 'var(--muted)' }}>{getCategoryName(room.category_id)} · Floor {room.floor}</div>
-                              </Col>
-                              <Col xs={3}>
-                                <div style={{ fontSize: 11, color: 'var(--muted)' }}>Guests</div>
-                                <div className="fw-semibold">{guestDistribution[room._id] || 0}</div>
-                              </Col>
-                              <Col xs={4} className="text-end">
-                                <div style={{ fontSize: 11, color: 'var(--muted)' }}>Amount</div>
-                                <div className="fw-bold">{cur} {room.estimatedTotal}</div>
-                              </Col>
-                            </Row>
-                          </div>
-                        ))}
-                      </Card.Body>
-                    </Card>
-                  </Col>
+          </Col>
+        </Row>
 
-                  {/* Dates + Guest side by side */}
-                  <Col xs={12} sm={6}>
-                    <Card style={{ borderRadius: 16, height: '100%' }}>
-                      <Card.Header>
-                        <h6 className="mb-0 d-flex align-items-center gap-2">
-                          <CsLineIcons icon="calendar" size="16" />
-                          Dates
-                        </h6>
-                      </Card.Header>
-                      <Card.Body>
-                        {[
-                          ['Check-In', new Date(searchData.check_in_date).toLocaleDateString()],
-                          ['Check-Out', new Date(searchData.check_out_date).toLocaleDateString()],
-                          ['Nights', selectedRooms[0]?.nights],
-                          ['Total Guests', searchData.guests_count],
-                        ].map(([label, val]) => (
-                          <div key={label} className="mb-3">
-                            <div style={S.sectionLabel}>{label}</div>
-                            <div className="fw-semibold">{val}</div>
-                          </div>
-                        ))}
-                      </Card.Body>
-                    </Card>
-                  </Col>
+        {/* ── Room Detail Modal ── */}
+        {detailRoom && (
+          <RoomDetailModal
+            room={detailRoom}
+            onHide={() => setDetailRoom(null)}
+            onEdit={null}
+            onStatusChange={null}
+            getImageUrl={getImageUrl}
+          />
+        )}
 
-                  <Col xs={12} sm={6}>
-                    <Card style={{ borderRadius: 16, height: '100%' }}>
-                      <Card.Header>
-                        <h6 className="mb-0 d-flex align-items-center gap-2">
-                          <CsLineIcons icon="user" size="16" />
-                          Guest
-                        </h6>
-                      </Card.Header>
-                      <Card.Body>
-                        {[
-                          ['Name', guestData.customer_name],
-                          ['Email', guestData.customer_email],
-                          ['Phone', guestData.customer_phone],
-                          ['Source', guestData.booking_source],
-                        ].map(([label, val]) => (
-                          <div key={label} className="mb-3">
-                            <div style={S.sectionLabel}>{label}</div>
-                            <div className="fw-semibold">{val}</div>
-                          </div>
-                        ))}
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                </Row>
-
-                <div className="d-flex justify-content-between mt-4 gap-2">
-                  <Button variant="outline-secondary" onClick={handleBack} style={{ borderRadius: 10 }}>
-                    ← Back
-                  </Button>
-                  <Button variant="primary" size="lg" onClick={handleConfirmBooking} disabled={loading} style={{ borderRadius: 12, fontWeight: 700, minWidth: 220 }}>
-                    {loading
-                      ? <><Spinner as="span" animation="border" size="sm" className="me-2" />Creating…</>
-                      : `Confirm Booking (${selectedRooms.length} room${selectedRooms.length > 1 ? 's' : ''})`}
-                  </Button>
-                </div>
-              </Col>
-            </Row>
-          )}
-
-        </Col>
-      </Row>
-    </>
+        {/* ── Payment Tracker — opens after booking is created ── */}
+        {createdBookingId && (
+          <PaymentTracker
+            show={showPaymentTracker}
+            onHide={() => {
+              setShowPaymentTracker(false);
+              history.push(`/operations/bookings/${createdBookingId}`);
+            }}
+            bookingId={createdBookingId}
+            bookingReference={createdBookingRef}
+            onPaymentAdded={() => {
+              // After payment added, close tracker and go to booking details
+              setShowPaymentTracker(false);
+              history.push(`/operations/bookings/${createdBookingId}`);
+            }}
+          />
+        )}
+      </div>
+    </div>
   );
 };
 

@@ -97,12 +97,7 @@ router.post("/bulk", checkPermission("manage_rooms"), bulkCreateRooms);
  * @desc    Create single room with images
  * @access  Private (requires manage_rooms permission)
  */
-router.post(
-  "/",
-  checkPermission("manage_rooms"),
-  uploadRoomImage.array("images", 10), // Upload up to 10 images
-  createRoom,
-);
+router.post("/", checkPermission("manage_rooms"), uploadRoomImage.any(), createRoom);
 
 /**
  * @route   GET /api/rooms
@@ -123,12 +118,7 @@ router.get("/:id", getRoom);
  * @desc    Update room with images
  * @access  Private (requires manage_rooms permission)
  */
-router.put(
-  "/:id",
-  checkPermission("manage_rooms"),
-  uploadRoomImage.array("images", 10), // Upload up to 10 images
-  updateRoom,
-);
+router.put("/:id", checkPermission("manage_rooms"), uploadRoomImage.any(), updateRoom);
 
 /**
  * @route   DELETE /api/rooms/:id

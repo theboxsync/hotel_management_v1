@@ -9,20 +9,19 @@ import { NavLink } from 'react-router-dom';
 import usePermission from 'hooks/usePermission';
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   NavSection — only renders if the user has ANY permission in `module`.
-   Children are individual Nav.Link items which can also be gated.
-───────────────────────────────────────────────────────────────────────────── */
-const NavSection = ({ module, icon, label, to, children }) => {
+   NavSection — renders a bold section header and its children
+ ───────────────────────────────────────────────────────────────────────────── */
+const NavSection = ({ module, icon, label, children }) => {
   const { canAny } = usePermission();
-  if (!canAny(module)) return null;
+  if (module && !canAny(module)) return null;
 
   return (
-    <div className="mb-2">
-      <Nav.Link as={NavLink} to={to} className="px-0">
-        <CsLineIcons icon={icon} className="me-2 sw-3" size="17" />
+    <div className="mb-1">
+      <div className="operations-section-header">
+        <CsLineIcons icon={icon} size="17" />
         <span className="align-middle">{label}</span>
-      </Nav.Link>
-      <div>{children}</div>
+      </div>
+      <div className="operations-sub-menu-container">{children}</div>
     </div>
   );
 };
@@ -33,20 +32,20 @@ const NavItem = ({ module, action, to, label }) => {
   if (!can(module, action)) return null;
 
   return (
-    <Nav.Link as={NavLink} to={to} className="px-0 pt-1">
+    <Nav.Link as={NavLink} to={to} className="px-0">
       <i className="me-2 sw-3 d-inline-block" />
       <span className="align-middle">{label}</span>
     </Nav.Link>
   );
 };
 
-/* Sub-link that only requires the module to have ANY access (e.g. list/view pages) */
+/* Sub-link that only requires the module to have ANY access */
 const NavItemAny = ({ module, to, label }) => {
   const { canAny } = usePermission();
   if (!canAny(module)) return null;
 
   return (
-    <Nav.Link as={NavLink} to={to} className="px-0 pt-1">
+    <Nav.Link as={NavLink} to={to} className="px-0">
       <i className="me-2 sw-3 d-inline-block" />
       <span className="align-middle">{label}</span>
     </Nav.Link>
@@ -55,31 +54,31 @@ const NavItemAny = ({ module, to, label }) => {
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Desktop sidebar nav
-───────────────────────────────────────────────────────────────────────────── */
+ ───────────────────────────────────────────────────────────────────────────── */
 const NavContent = () => (
   <Nav className="flex-column">
 
-    {/* Bookings — shown if user can read bookings */}
-    <NavSection module="manage_bookings" icon="handbag" label="Bookings" to="/operations/bookings">
+    {/* Bookings */}
+    <NavSection module="manage_bookings" icon="handbag" label="Bookings">
       <NavItemAny module="manage_bookings" to="/operations/bookings" label="All Bookings" />
       <NavItem module="manage_bookings" action="create" to="/operations/new-booking" label="New Booking" />
       <NavItemAny module="manage_bookings" to="/operations/check-in-out" label="Check-In/Out" />
     </NavSection>
 
     {/* Room Categories */}
-    <NavSection module="manage_rooms" icon="list" label="Room Categories" to="/operations/room-categories">
+    <NavSection module="manage_rooms" icon="list" label="Room Categories">
       <NavItemAny module="manage_rooms" to="/operations/room-categories/manage" label="Manage Room Categories" />
       <NavItem module="manage_rooms" action="create" to="/operations/room-categories/add" label="Add Room Category" />
     </NavSection>
 
     {/* Rooms */}
-    <NavSection module="manage_rooms" icon="list" label="Rooms" to="/operations/rooms">
+    <NavSection module="manage_rooms" icon="list" label="Rooms">
       <NavItemAny module="manage_rooms" to="/operations/rooms/manage" label="Manage Rooms" />
       <NavItem module="manage_rooms" action="create" to="/operations/rooms/add" label="Add Room" />
     </NavSection>
 
     {/* Inventory */}
-    <NavSection module="manage_inventory" icon="boxes" label="Inventory" to="/operations/inventory/requested">
+    <NavSection module="manage_inventory" icon="boxes" label="Inventory">
       <NavItemAny module="manage_inventory" to="/operations/inventory/requested" label="Requested Inventory" />
       <NavItemAny module="manage_inventory" to="/operations/inventory/history" label="Inventory History" />
       <NavItem module="manage_inventory" action="create" to="/operations/inventory/add" label="Add Inventory" />
@@ -87,24 +86,30 @@ const NavContent = () => (
     </NavSection>
 
     {/* Staff Panel */}
-    <NavSection module="manage_staff" icon="users" label="Staff Panel" to="/operations/staff-panel">
+    <NavSection module="manage_staff" icon="users" label="Staff Panel">
       <NavItemAny module="manage_staff" to="/operations/staff-panel/manage" label="Manage Staff Panel" />
       <NavItem module="manage_staff" action="create" to="/operations/staff-panel/add" label="Add Staff" />
+    </NavSection>
+
+    {/* Feedback */}
+    <NavSection module="manage_bookings" icon="message" label="Feedback">
+      <NavItemAny module="manage_bookings" to="/operations/feedback" label="View Feedbacks" />
+      <NavItemAny module="manage_bookings" to="/operations/qr-for-feedback" label="Feedback QR" />
     </NavSection>
 
   </Nav>
 );
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Mobile navbar — dropdown per section, gated the same way
-───────────────────────────────────────────────────────────────────────────── */
+   Mobile navbar
+ ───────────────────────────────────────────────────────────────────────────── */
 const MobileNavSection = ({ module, icon, label, items }) => {
   const { canAny, can } = usePermission();
-  if (!canAny(module)) return null;
+  if (module && !canAny(module)) return null;
 
   // Filter items by their required action (if specified)
   const visibleItems = items.filter(item =>
-    item.action ? can(module, item.action) : canAny(module)
+    item.action ? can(module, item.action) : (module ? canAny(module) : true)
   );
   if (!visibleItems.length) return null;
 
@@ -175,12 +180,21 @@ const MobileNavbar = () => (
         { label: 'Add Staff', to: '/operations/staff-panel/add', action: 'create' },
       ]}
     />
+    <MobileNavSection
+      module="manage_bookings"
+      icon="message"
+      label="Feedback"
+      items={[
+        { label: 'View Feedbacks', to: '/operations/feedback' },
+        { label: 'Feedback QR', to: '/operations/qr-for-feedback' },
+      ]}
+    />
   </div>
 );
 
 /* ─────────────────────────────────────────────────────────────────────────────
    HOC
-───────────────────────────────────────────────────────────────────────────── */
+ ───────────────────────────────────────────────────────────────────────────── */
 const withOperationsLayout = (WrappedComponent) => {
   return (props) => {
     useCustomLayout({ layout: LAYOUT.Boxed });
@@ -198,7 +212,7 @@ const withOperationsLayout = (WrappedComponent) => {
         <Row>
           {width && width >= lgBreakpoint ? (
             <Col xs="auto" className="d-none d-lg-flex">
-              <div className="nav flex-column sw-25 mt-2">
+              <div className="operations-operations-sidebar nav flex-column sw-25">
                 <NavContent />
               </div>
             </Col>
